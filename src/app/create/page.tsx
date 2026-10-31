@@ -42,6 +42,9 @@ import {
   X,
   Image as ImageIcon,
   Camera,
+  Share2,
+  Copy,
+  BarChart3,
 } from 'lucide-react';
 
 const SALUTATION_PRESETS = [
@@ -260,6 +263,9 @@ function CreateInviteContent() {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [storedInvites, setStoredInvites] = useState<Record<string, InvitationData>>({});
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [publishedModalOpen, setPublishedModalOpen] = useState(false);
+  const [publishedSlug, setPublishedSlug] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCurrentUser>>(null);
   const [customSlug, setCustomSlug] = useState('');
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
@@ -495,10 +501,24 @@ function CreateInviteContent() {
     };
     saveInvitation(finalized);
     linkInviteToCurrentUser(finalSlug);
+    setPublishedSlug(finalSlug);
     setSaveSuccess(true);
-    setTimeout(() => {
-      router.push(`/i/${finalSlug}`);
-    }, 400);
+    setPublishedModalOpen(true);
+  };
+
+  const handleCopyGuestLink = () => {
+    if (typeof window === 'undefined') return;
+    const guestUrl = `${window.location.origin}/i/${publishedSlug || formData.slug}`;
+    navigator.clipboard.writeText(guestUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleShareWhatsApp = () => {
+    if (typeof window === 'undefined') return;
+    const guestUrl = `${window.location.origin}/i/${publishedSlug || formData.slug}`;
+    const text = `💍 *Wedding Invitation: ${formData.groomName} & ${formData.brideName}*\n\nTogether with our families, we warmly invite you to celebrate with us!\n\nOpen your personal 3D digital invitation:\n${guestUrl}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleSwitchEditingInvite = (slugToLoad: string) => {
@@ -1593,7 +1613,7 @@ function CreateInviteContent() {
               >
                 <Sparkles className="w-4 h-4 text-amber-200" />
                 <span>
-                  {saveSuccess ? 'Changes Saved! Redirecting...' : 'Save Changes &amp; Publish Live Link'}
+                  {saveSuccess ? 'Live Guest Link Ready! (Click to View)' : 'Save Changes &amp; Generate Live Link'}
                 </span>
               </button>
             </div>
@@ -1620,6 +1640,93 @@ function CreateInviteContent() {
           </PhoneMockup>
         </div>
       </main>
+
+      {/* ======================================================== */}
+      {/* DEDICATED GUEST LINK GENERATION MODAL (ONLY INVITE VIEW) */}
+      {/* ======================================================== */}
+      {publishedModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#fff8e7] border-2 border-[#b8860b] rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 text-center shadow-2xl relative">
+            <button
+              onClick={() => setPublishedModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-[#7d6f6a] hover:bg-[#e8dcc6] transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 rounded-full bg-amber-100 border-2 border-amber-300 flex items-center justify-center text-2xl mx-auto shadow-inner">
+              🎉
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#722f37] bg-[#e8dcc6] px-3 py-0.5 rounded-full">
+                Sharable Guest Link Ready
+              </span>
+              <h2 className="text-2xl font-serif font-bold text-[#2b2220]">
+                {formData.groomName} &amp; {formData.brideName}&apos;s Invite
+              </h2>
+              <p className="text-xs text-[#5f524e] leading-relaxed">
+                A separate, dedicated link has been generated for your guests. When they open it, <strong>only the invitation will appear</strong> (no edit buttons, no dashboard, no admin tools).
+              </p>
+            </div>
+
+            {/* Sharable Link Box */}
+            <div className="p-3.5 bg-white border border-[#d7c5a4] rounded-2xl space-y-2 text-left">
+              <div className="flex items-center justify-between text-[11px] text-[#7d6f6a]">
+                <span className="font-semibold text-[#2b2220]">Guest Invitation Link:</span>
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-mono font-bold">
+                  ✓ Pure Invite Mode
+                </span>
+              </div>
+              <div className="flex items-center gap-2 bg-[#fbf8f1] border border-[#d7c5a4] rounded-xl px-3 py-2 font-mono text-xs text-[#722f37] font-bold overflow-x-auto">
+                <span className="truncate">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/i/${publishedSlug || formData.slug}` : `/i/${publishedSlug || formData.slug}`}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                onClick={handleCopyGuestLink}
+                className="py-3 px-4 rounded-xl bg-[#b8860b] hover:bg-[#9a7009] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+              >
+                {copiedLink ? <Check className="w-4 h-4 text-emerald-200" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedLink ? 'Link Copied to Clipboard!' : 'Copy Guest Link'}</span>
+              </button>
+
+              <button
+                onClick={handleShareWhatsApp}
+                className="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Share on WhatsApp</span>
+              </button>
+            </div>
+
+            {/* Navigation Options for Host */}
+            <div className="pt-2 border-t border-[#e8dcc6] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+              <a
+                href={`/i/${publishedSlug || formData.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#f5ede0] hover:bg-[#ece2cf] text-[#2b2220] font-semibold flex items-center justify-center gap-1.5 transition-colors border border-[#d7c5a4]"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-[#b8860b]" />
+                <span>Open Clean Guest View</span>
+              </a>
+
+              <a
+                href={`/dashboard/${publishedSlug || formData.slug}`}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#2a2220] hover:bg-[#1a1413] text-[#fff8e7] font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
+                <span>Host Dashboard (Track RSVPs) →</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

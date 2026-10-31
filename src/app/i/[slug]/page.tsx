@@ -7,8 +7,6 @@ import { getInvitationBySlug, addRSVPToInvite, saveInvitation } from '@/lib/stor
 import InvitationView from '@/components/InvitationView';
 import RoyalMonarchView from '@/components/RoyalMonarchView';
 import VeerZaraView from '@/components/VeerZaraView';
-import PhoneMockup from '@/components/PhoneMockup';
-import { BarChart3, Edit3 } from 'lucide-react';
 
 export default function GuestInvitePage() {
   const params = useParams();
@@ -79,29 +77,11 @@ export default function GuestInvitePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-2 sm:p-4">
-      {/* Top Floating Utility for Hosts */}
-      <div className="w-full max-w-[395px] mb-2 flex items-center justify-between text-xs text-slate-400 px-2">
-        <a
-          href={`/create?edit=${slug}`}
-          className="hover:text-amber-300 flex items-center gap-1 transition-colors text-amber-400/90 font-medium"
-        >
-          <Edit3 className="w-3.5 h-3.5" />
-          <span>Edit This Invite</span>
-        </a>
-
-        <a
-          href={`/dashboard/${slug}`}
-          className="hover:text-amber-300 flex items-center gap-1 text-amber-400/90 font-medium transition-colors"
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          <span>Host Dashboard →</span>
-        </a>
-      </div>
-
-      <PhoneMockup>
+    <div className="min-h-screen bg-slate-950 flex justify-center">
+      {/* Pure Guest Invitation Viewport: Only the invitation, zero host controls */}
+      <main className="w-full max-w-[440px] min-h-screen flex flex-col bg-slate-900 shadow-2xl overflow-x-hidden relative">
         {renderTemplateView()}
-      </PhoneMockup>
+      </main>
     </div>
   );
 }

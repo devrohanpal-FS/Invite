@@ -14,6 +14,8 @@ import {
   Sparkles,
   MessageSquareHeart,
   QrCode,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function HostDashboardPage() {
@@ -114,6 +116,44 @@ export default function HostDashboardPage() {
               <Share2 className="w-3.5 h-3.5" />
               <span>WhatsApp Blast</span>
             </button>
+          </div>
+        </div>
+
+        {/* Guest Sharable Link Banner */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/30 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="space-y-0.5 min-w-0">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span>🔗</span>
+              <span>Sharable Guest Invitation Link (Pure Invite View)</span>
+            </span>
+            <p className="text-slate-300 font-mono text-[11px] truncate">
+              {typeof window !== 'undefined' ? `${window.location.origin}/i/${slug}` : `/i/${slug}`}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  navigator.clipboard.writeText(`${window.location.origin}/i/${slug}`);
+                  alert('Guest link copied to clipboard!');
+                }
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition-all flex items-center gap-1.5 cursor-pointer text-xs"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy Guest Link</span>
+            </button>
+
+            <a
+              href={`/i/${slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+              <span>Preview Guest View</span>
+            </a>
           </div>
         </div>
 
