@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project INVITE - 3D Interactive Prototype</title>
+  <!-- Allowlisted Tailwind -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  
+  <style>
+    /* 3D Perspective Scene */
+    .perspective-stage {
+      perspective: 1200px;
+      perspective-origin: center center;
+    }
+    
+    .doors-wrapper {
+      transform-style: preserve-3d;
+    }
+
+    /* Left Gate 3D Hinge */
+    .door-panel-left {
+      transform-origin: left center;
+      transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+    }
+
+    /* Right Gate 3D Hinge */
+    .door-panel-right {
+      transform-origin: right center;
+      transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+    }
+
+    /* Gates Open State */
+    .doors-opened .door-panel-left {
+      transform: rotateY(-115deg);
+    }
+    .doors-opened .door-panel-right {
+      transform: rotateY(115deg);
+    }
+
+    /* 3D Tilt Card physics */
+    .tilt-card {
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    /* Animations */
+    @keyframes pulse-ring {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+    .animate-pulse-ring {
+      animation: pulse-ring 2.5s ease-in-out infinite;
+    }
+
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+      animation: spin-slow 10s linear infinite;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #030d07; }
+    ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen p-2 md:p-6 flex flex-col items-center justify-start selection:bg-amber-500 selection:text-black">
+
+  <!-- TOP STATUS BAR -->
+  <header class="w-full max-w-5xl mb-4 bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 backdrop-blur-md shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-400 to-yellow-300 flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-amber-500/30">
+        👑
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-base md:text-lg text-amber-200 tracking-wide font-serif">INVITE 3D Interactive Simulator</h1>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-semibold">
+            Ready & Clickable
+          </span>
+        </div>
+        <p class="text-xs text-slate-400">Click tabs to switch views • Click Open Gates below to test 3D entry</p>
+      </div>
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="flex items-center bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+      <button onclick="switchTab('guest')" id="tab-guest-btn" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all bg-amber-500 text-slate-950 shadow-md">
+        📱 Guest 3D Experience
+      </button>
+      <button onclick="switchTab('builder')" id="tab-builder-btn" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200">
+        🛠️ Studio Builder
+      </button>
+      <button onclick="switchTab('dashboard')" id="tab-dashboard-btn" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200">
+        📊 Host Dashboard
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN SIMULATOR CONTAINER -->
+  <main class="w-full max-w-5xl flex items-center justify-center pb-10">
+
+    <!-- ============================================== -->
+    <!-- 1. GUEST EXPERIENCE (SMARTPHONE SIMULATOR)     -->
+    <!-- ============================================== -->
+    <div id="view-guest" class="w-full flex flex-col items-center">
+      
+      <!-- Instructions Banner -->
+      <div class="mb-3 text-center">
+        <p class="text-xs text-amber-300 font-medium bg-amber-950/50 border border-amber-500/30 px-4 py-1.5 rounded-full inline-flex items-center gap-2 shadow-lg">
+          <span>👉 Click <strong>"Open Royal Gates"</strong> on the phone below to start!</span>
+        </p>
+      </div>
+
+      <!-- Smartphone Frame Mockup -->
+      <div class="relative w-full max-w-[390px] h-[780px] bg-[#020b06] rounded-[48px] border-[8px] border-slate-800 shadow-[0_0_80px_rgba(212,175,55,0.2)] overflow-hidden flex flex-col">
+        
+        <!-- Mobile Status Bar -->
+        <div class="h-10 bg-black/60 backdrop-blur-sm px-7 flex items-center justify-between text-xs text-slate-400 z-50">
+          <span class="font-semibold text-slate-200">9:41</span>
+          <div class="w-20 h-4 bg-slate-900 rounded-full mx-auto"></div>
+          <div class="flex items-center gap-1.5 text-slate-300 text-[11px]">
+            <span>5G</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- 3D PALACE GATES OVERLAY (CSS 3D HARDWARE)    -->
+        <!-- ============================================ -->
+        <div id="gates-overlay" class="absolute inset-0 z-40 bg-[#020b06] perspective-stage flex flex-col overflow-hidden">
+          
+          <!-- Floating Gold Sparkles Canvas in Background -->
+          <canvas id="sparkles-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+          <!-- Top Monogram -->
+          <div class="relative z-10 pt-12 text-center pointer-events-none">
+            <div class="w-14 h-14 rounded-full border-2 border-amber-400/80 bg-amber-500/10 mx-auto flex items-center justify-center font-serif text-amber-300 text-lg shadow-[0_0_20px_rgba(212,175,55,0.4)]">
+              K & A
+            </div>
+            <p class="text-[11px] font-serif tracking-[0.25em] text-amber-300/80 uppercase mt-2">
+              A Royal Celebration
+            </p>
+            <h2 class="text-2xl font-serif font-bold text-amber-100 tracking-wide mt-0.5">
+              Kabir & Ananya
+            </h2>
+          </div>
+
+          <!-- 3D Double Gate Doors Container -->
+          <div id="doors-container" class="doors-wrapper relative flex-1 mx-4 my-4 flex overflow-hidden rounded-2xl border-2 border-amber-500/40 shadow-[0_0_40px_rgba(0,0,0,0.9)]">
+            
+            <!-- Left Door Panel -->
+            <div id="door-left" class="door-panel-left w-1/2 h-full bg-gradient-to-r from-[#03150d] via-[#092b1a] to-[#0c3923] border-r-2 border-amber-400/80 flex flex-col justify-between p-4 relative shadow-2xl">
+              <!-- Ornate Carving Pattern -->
+              <div class="border border-amber-500/30 rounded-xl h-full p-2 flex flex-col justify-between items-center">
+                <span class="text-amber-400/50 text-xl font-serif">⚜</span>
+                <div class="w-10 h-10 rounded-full border-2 border-amber-400/60 flex items-center justify-center text-amber-300 text-sm font-serif">
+                  K
+                </div>
+                <span class="text-amber-400/50 text-xl font-serif">⚜</span>
+              </div>
+            </div>
+
+            <!-- Right Door Panel -->
+            <div id="door-right" class="door-panel-right w-1/2 h-full bg-gradient-to-l from-[#03150d] via-[#092b1a] to-[#0c3923] border-l-2 border-amber-400/80 flex flex-col justify-between p-4 relative shadow-2xl">
+              <!-- Ornate Carving Pattern -->
+              <div class="border border-amber-500/30 rounded-xl h-full p-2 flex flex-col justify-between items-center">
+                <span class="text-amber-400/50 text-xl font-serif">⚜</span>
+                <div class="w-10 h-10 rounded-full border-2 border-amber-400/60 flex items-center justify-center text-amber-300 text-sm font-serif">
+                  A
+                </div>
+                <span class="text-amber-400/50 text-xl font-serif">⚜</span>
+              </div>
+            </div>
+
+            <!-- Center Golden Wax Seal Button -->
+            <div id="seal-trigger" class="absolute inset-0 flex flex-col items-center justify-center z-30">
+              <button onclick="triggerGateOpen()" class="animate-pulse-ring group px-6 py-6 rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-yellow-600 text-slate-950 font-bold shadow-[0_0_40px_rgba(212,175,55,0.9)] hover:scale-105 active:scale-95 transition-all flex flex-col items-center justify-center border-4 border-amber-200 cursor-pointer">
+                <span class="text-3xl">🗝️</span>
+                <span class="text-[10px] tracking-widest uppercase font-serif mt-1 font-black">Open Gates</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Bottom Footer Trigger -->
+          <div class="relative z-10 pb-8 text-center px-6">
+            <button onclick="triggerGateOpen()" class="w-full py-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 rounded-xl text-xs text-amber-300 font-bold tracking-wider uppercase font-serif transition-all">
+              ✨ Tap to Unlock Royal Invitation
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ============================================ -->
+        <!-- MAIN SCROLLABLE INVITATION WEBPAGE           -->
+        <!-- ============================================ -->
+        <div id="invite-main-content" class="flex-1 overflow-y-auto px-4 py-5 space-y-6 relative bg-gradient-to-b from-[#031109] via-[#051c0f] to-[#020b06] text-slate-100">
+
+          <!-- Sticky Audio & Multi-Language Switch Bar -->
+          <div class="sticky top-2 z-30 flex items-center justify-between bg-black/70 backdrop-blur-md px-3.5 py-2 rounded-full border border-amber-500/30 shadow-xl">
+            <div class="flex items-center gap-2">
+              <span id="music-disc" class="text-amber-400 text-sm animate-spin-slow">💿</span>
+              <span class="text-[11px] text-amber-200 font-medium truncate max-w-[130px]">Kudmayi - Shehnai</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <!-- Multi-Language Switcher USP -->
+              <select onchange="changeLanguage(this.value)" class="bg-amber-500/20 text-amber-300 text-[10px] font-semibold rounded-lg px-2 py-0.5 border border-amber-500/40 focus:outline-none cursor-pointer">
+                <option value="en">EN</option>
+                <option value="hi">हिन्दी</option>
+                <option value="gu">ગુજરાતી</option>
+              </select>
+
+              <button onclick="toggleAudio()" id="music-btn" class="px-2.5 py-0.5 rounded-full bg-amber-500/30 hover:bg-amber-500/50 border border-amber-400/50 text-[10px] text-amber-200 font-bold transition-all">
+                🔊 Playing
+              </button>
+            </div>
+          </div>
+
+          <!-- Hero Royal Crest & Monogram -->
+          <div class="text-center pt-3 space-y-2">
+            <div class="inline-flex p-3 rounded-full border border-amber-500/40 bg-gradient-to-b from-amber-500/10 to-transparent shadow-[0_0_25px_rgba(212,175,55,0.2)]">
+              <div class="w-16 h-16 rounded-full border-2 border-amber-400 flex items-center justify-center font-serif text-2xl font-bold text-amber-300 shadow-inner">
+                K & A
+              </div>
+            </div>
+            
+            <p id="label-salutation" class="text-[11px] font-serif tracking-[0.25em] text-amber-300/80 uppercase">
+              ॥ श्री गणेशाय नमः ॥
+            </p>
+            <h2 id="label-couple" class="text-2xl font-serif font-bold text-amber-100 tracking-wide">
+              Kabir & Ananya
+            </h2>
+            <p id="label-tagline" class="text-xs text-slate-300 italic max-w-xs mx-auto leading-relaxed">
+              Together with their families, request the pleasure of your company to celebrate their wedding union.
+            </p>
+          </div>
+
+          <!-- 3D TILT CARD: SCRATCH TO REVEAL DATE -->
+          <div class="tilt-card bg-gradient-to-b from-[#082818] to-[#04150c] p-4 rounded-3xl border border-amber-500/40 shadow-xl text-center space-y-3">
+            <div class="flex items-center justify-center gap-1.5 text-amber-300 text-xs font-semibold uppercase tracking-wider">
+              <span>🪙</span>
+              <span>Interactive Scratch Card</span>
+            </div>
+            
+            <div class="relative w-full h-28 rounded-2xl overflow-hidden border border-amber-500/40 bg-amber-950/40 flex items-center justify-center shadow-inner">
+              
+              <!-- Underneath Date Content -->
+              <div class="absolute inset-0 flex flex-col items-center justify-center p-2 bg-gradient-to-tr from-amber-900/70 via-amber-800/40 to-amber-900/70">
+                <span class="text-[10px] text-amber-300 font-serif tracking-widest uppercase">The Grand Wedding Date</span>
+                <span class="text-2xl font-black text-amber-100 font-serif tracking-wide mt-0.5">DECEMBER 14, 2026</span>
+                <span class="text-[11px] text-amber-200/90 font-medium">The Leela Palace, Udaipur</span>
+              </div>
+
+              <!-- Interactive Scratch Canvas Overlay -->
+              <canvas id="scratch-canvas" class="absolute inset-0 w-full h-full cursor-pointer z-10"></canvas>
+            </div>
+
+            <p id="scratch-feedback" class="text-[11px] text-amber-300/80 font-medium">
+              ✨ Scratch with your mouse or finger to reveal date!
+            </p>
+          </div>
+
+          <!-- 3D TILT CARD: COUNTDOWN TIMER -->
+          <div class="tilt-card bg-black/50 border border-amber-500/30 rounded-2xl p-4 text-center shadow-lg">
+            <p class="text-[11px] uppercase tracking-widest text-amber-400 font-serif mb-3">
+              Moments Until Forever
+            </p>
+            <div class="grid grid-cols-4 gap-2">
+              <div class="bg-amber-950/50 border border-amber-500/30 rounded-xl p-2 shadow-inner">
+                <span class="text-xl font-bold font-serif text-amber-200">48</span>
+                <span class="block text-[9px] uppercase text-slate-400 mt-0.5">Days</span>
+              </div>
+              <div class="bg-amber-950/50 border border-amber-500/30 rounded-xl p-2 shadow-inner">
+                <span class="text-xl font-bold font-serif text-amber-200">14</span>
+                <span class="block text-[9px] uppercase text-slate-400 mt-0.5">Hours</span>
+              </div>
+              <div class="bg-amber-950/50 border border-amber-500/30 rounded-xl p-2 shadow-inner">
+                <span class="text-xl font-bold font-serif text-amber-200">32</span>
+                <span class="block text-[9px] uppercase text-slate-400 mt-0.5">Mins</span>
+              </div>
+              <div class="bg-amber-950/50 border border-amber-500/30 rounded-xl p-2 shadow-inner">
+                <span id="countdown-sec" class="text-xl font-bold font-serif text-amber-400">12</span>
+                <span class="block text-[9px] uppercase text-slate-400 mt-0.5">Secs</span>
+              </div>
+            </div>
+            
+            <button onclick="alert('📅 Wedding event synced to Google Calendar!')" class="mt-3 w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-xs text-amber-300 font-semibold flex items-center justify-center gap-2 transition-all">
+              <span>📅</span> Sync to Google Calendar
+            </button>
+          </div>
+
+          <!-- 3D TILT CARD: ITINERARY -->
+          <div class="space-y-3">
+            <h3 class="text-center font-serif text-sm tracking-widest text-amber-300 uppercase">
+              Schedule of Festivities
+            </h3>
+
+            <!-- Haldi -->
+            <div class="tilt-card bg-[#072014] border-l-4 border-amber-400 rounded-r-2xl p-3.5 space-y-1 shadow-md">
+              <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm text-amber-100">💛 Haldi & Phoolon Ki Holi</h4>
+                <span class="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-mono">10:30 AM</span>
+              </div>
+              <p class="text-xs text-slate-300">Dec 13, 2026 • The Courtyard Lawn</p>
+              <p class="text-[11px] text-amber-200/60 italic">Dress Code: Sunshine Yellow</p>
+            </div>
+
+            <!-- Sangeet -->
+            <div class="tilt-card bg-[#072014] border-l-4 border-amber-400 rounded-r-2xl p-3.5 space-y-1 shadow-md">
+              <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm text-amber-100">💃 Sangeet & Musical Night</h4>
+                <span class="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-mono">07:00 PM</span>
+              </div>
+              <p class="text-xs text-slate-300">Dec 13, 2026 • Grand Ballroom</p>
+              <p class="text-[11px] text-amber-200/60 italic">Dress Code: Indo-Western Glam</p>
+            </div>
+
+            <!-- Wedding -->
+            <div class="tilt-card bg-[#072014] border-l-4 border-amber-400 rounded-r-2xl p-3.5 space-y-1 shadow-md">
+              <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm text-amber-100">💍 The Royal Vows (Pheras)</h4>
+                <span class="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-mono">05:30 PM</span>
+              </div>
+              <p class="text-xs text-slate-300">Dec 14, 2026 • Lake Pichola Mandap</p>
+              <p class="text-[11px] text-amber-200/60 italic">Dress Code: Royal Traditional</p>
+            </div>
+          </div>
+
+          <!-- VENUE & NAVIGATION -->
+          <div class="tilt-card bg-[#071e13] border border-amber-500/30 rounded-2xl p-4 text-center space-y-3">
+            <span class="text-3xl">🏰</span>
+            <div>
+              <h4 class="font-serif font-bold text-amber-200 text-sm">The Leela Palace Udaipur</h4>
+              <p class="text-xs text-slate-300 mt-0.5">Lake Pichola, Udaipur, Rajasthan 313001</p>
+            </div>
+            
+            <div class="flex gap-2">
+              <button onclick="alert('Navigating to The Leela Palace Udaipur on Google Maps!')" class="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 shadow-md transition-all">
+                <span>📍</span> Google Maps
+              </button>
+              <button onclick="alert('Opening Uber/Ola booking with venue auto-filled!')" class="flex-1 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center justify-center gap-1 hover:bg-slate-800 transition-all">
+                <span>🚗</span> Book Cab
+              </button>
+            </div>
+          </div>
+
+          <!-- KILLER FEATURE: 3D DIGITAL SHAGUN ENVELOPE (UPI) -->
+          <div class="tilt-card bg-gradient-to-r from-amber-950/80 via-yellow-950/50 to-amber-950/80 border border-amber-400/50 rounded-2xl p-4 text-center space-y-3 relative overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-center gap-2 text-amber-300 font-serif font-bold text-sm">
+              <span>🎁</span>
+              <span>Send Digital Shagun & Blessings</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Cannot attend in person? Send your love and shagun directly to Kabir & Ananya via UPI with an animated 3D envelope.
+            </p>
+            
+            <!-- Quick Shagun Amounts -->
+            <div class="flex items-center justify-center gap-2">
+              <button onclick="openShagunModal('₹501')" class="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-xs text-amber-200 font-semibold hover:bg-amber-500/40">₹501</button>
+              <button onclick="openShagunModal('₹1,100')" class="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-xs text-amber-200 font-semibold hover:bg-amber-500/40">₹1,100</button>
+              <button onclick="openShagunModal('₹2,100')" class="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-xs text-amber-200 font-semibold hover:bg-amber-500/40">₹2,100</button>
+              <button onclick="openShagunModal('₹5,100')" class="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-xs text-amber-200 font-semibold hover:bg-amber-500/40">₹5,100</button>
+            </div>
+
+            <button onclick="openShagunModal('₹1,100')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-bold text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+              <span>✉️</span> Open 3D Shagun UPI Envelope
+            </button>
+          </div>
+
+          <!-- INTERACTIVE RSVP FORM -->
+          <div class="tilt-card bg-[#05180e] border border-amber-500/30 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div class="text-center">
+              <h3 class="font-serif font-bold text-amber-300 text-sm">Will You Be Joining Us?</h3>
+              <p class="text-[11px] text-slate-400">Kindly RSVP by December 1st to assist our hospitality team</p>
+            </div>
+
+            <form onsubmit="handleRSVP(event)" class="space-y-2.5 text-xs">
+              <div>
+                <label class="block text-slate-300 text-[11px] mb-1">Your Full Name</label>
+                <input type="text" id="form-name" required placeholder="e.g. Ramesh Sharma" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-amber-400">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-300 text-[11px] mb-1">Are You Attending?</label>
+                  <select id="form-status" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-amber-400">
+                    <option value="Joyfully Accept">Joyfully Accept 🎉</option>
+                    <option value="Regretfully Decline">Regretfully Decline</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-300 text-[11px] mb-1">Guests Count</label>
+                  <input type="number" id="form-count" value="2" min="1" max="10" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-amber-400">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-300 text-[11px] mb-1">Leave a Blessing / Wish</label>
+                <textarea id="form-wish" rows="2" placeholder="Wishing you a lifetime of laughter & love..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-amber-400"></textarea>
+              </div>
+
+              <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-md transition-all cursor-pointer">
+                Confirm RSVP & Send Wishes
+              </button>
+            </form>
+
+            <div id="rsvp-toast" class="hidden p-3 bg-emerald-950/90 border border-emerald-500/40 rounded-xl text-center text-xs text-emerald-300">
+              ✅ Thank you! Your RSVP has synced to the Host Dashboard!
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <div class="pt-3 pb-8 text-center border-t border-slate-800 space-y-2">
+            <p class="text-[11px] text-slate-400">Warm Regards,</p>
+            <p class="font-serif font-bold text-amber-300 text-sm">Sharma & Verma Families</p>
+            <div class="pt-3">
+              <a href="#" onclick="switchTab('builder')" class="inline-flex items-center gap-1.5 text-[11px] text-amber-400/80 hover:text-amber-300 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20">
+                <span>✨ Built with INVITE 3D Studio</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- 2. STUDIO BUILDER VIEW                         -->
+    <!-- ============================================== -->
+    <div id="view-builder" class="hidden w-full max-w-2xl bg-slate-900 border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-6">
+      <div class="border-b border-slate-800 pb-3">
+        <h2 class="text-xl font-bold text-amber-200 font-serif">🛠️ Real-Time 3D Studio Builder</h2>
+        <p class="text-xs text-slate-400 mt-1">Changes here instantly update the live 3D smartphone simulator!</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Groom's Name</label>
+          <input type="text" id="input-groom" oninput="syncCoupleNames()" value="Kabir" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-200">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Bride's Name</label>
+          <input type="text" id="input-bride" oninput="syncCoupleNames()" value="Ananya" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-200">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Wedding Date</label>
+          <input type="date" value="2026-12-14" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-200">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">City & Venue</label>
+          <input type="text" value="The Leela Palace, Udaipur" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-200">
+        </div>
+      </div>
+
+      <!-- Theme Selector -->
+      <div>
+        <label class="block text-slate-300 text-xs font-medium mb-2">Select 3D Aesthetic Theme</label>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 rounded-xl border-2 border-amber-400 bg-emerald-950/40 text-center cursor-pointer shadow-md">
+            <div class="w-6 h-6 rounded-full bg-emerald-700 mx-auto mb-1 border border-amber-400"></div>
+            <span class="font-bold text-amber-200">Royal Emerald</span>
+            <span class="block text-[10px] text-emerald-400">Selected</span>
+          </div>
+          <div class="p-3 rounded-xl border border-slate-700 hover:border-slate-500 bg-red-950/20 text-center cursor-pointer opacity-75">
+            <div class="w-6 h-6 rounded-full bg-red-800 mx-auto mb-1"></div>
+            <span class="font-medium text-slate-300">Ruby Crimson</span>
+            <span class="block text-[10px] text-slate-500">Preview</span>
+          </div>
+          <div class="p-3 rounded-xl border border-slate-700 hover:border-slate-500 bg-amber-950/20 text-center cursor-pointer opacity-75">
+            <div class="w-6 h-6 rounded-full bg-amber-600 mx-auto mb-1"></div>
+            <span class="font-medium text-slate-300">Imperial Gold</span>
+            <span class="block text-[10px] text-slate-500">Preview</span>
+          </div>
+          <div class="p-3 rounded-xl border border-slate-700 hover:border-slate-500 bg-slate-950 text-center cursor-pointer opacity-75">
+            <div class="w-6 h-6 rounded-full bg-pink-700 mx-auto mb-1"></div>
+            <span class="font-medium text-slate-300">Garden Bloom</span>
+            <span class="block text-[10px] text-slate-500">Preview</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1-Click WhatsApp Personalized Dispatcher Feature Preview -->
+      <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-sm">📲</span>
+            <span class="font-bold text-xs text-emerald-300">1-Click WhatsApp Bulk Personalized Dispatcher</span>
+          </div>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">Exclusive USP</span>
+        </div>
+        <p class="text-xs text-slate-300">
+          Upload guest contact list. System automatically sends: <em>"Namaste Sharma Ji, Kabir & Ananya cordially invite your family: [personal-link]"</em>.
+        </p>
+        <button onclick="alert('Demo: Generated 150 personalized WhatsApp invite links with individual guest names!')" class="text-xs text-emerald-300 hover:text-emerald-200 underline font-semibold cursor-pointer">
+          🚀 Test Bulk WhatsApp Dispatcher Demo
+        </button>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="switchTab('guest')" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-all cursor-pointer">
+          Switch to 3D Live Simulator View →
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- 3. HOST INTELLIGENCE DASHBOARD                 -->
+    <!-- ============================================== -->
+    <div id="view-dashboard" class="hidden w-full max-w-3xl bg-slate-900 border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-amber-200 font-serif">📊 Host Event Intelligence</h2>
+          <p class="text-xs text-slate-400 mt-1">Live RSVP tracker for: <span class="text-amber-300 font-medium">Kabir & Ananya's Wedding</span></p>
+        </div>
+        <button onclick="alert('Exported 186 guest records to Excel (Name, Attendance, Guest Count, Wishes, Shagun)!')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 cursor-pointer">
+          <span>📥</span> Download Excel List
+        </button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400 block">Total Link Views</span>
+          <span class="text-2xl font-bold text-slate-100 font-mono mt-1 block">1,248</span>
+          <span class="text-[10px] text-emerald-400">↑ 182 today</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30">
+          <span class="text-xs text-emerald-300 block">Confirmed RSVPs</span>
+          <span id="dash-attending" class="text-2xl font-bold text-emerald-400 font-mono mt-1 block">186</span>
+          <span class="text-[10px] text-emerald-400">92 families</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+          <span class="text-xs text-slate-400 block">Regrets (Can't Attend)</span>
+          <span id="dash-regrets" class="text-2xl font-bold text-rose-400 font-mono mt-1 block">18</span>
+          <span class="text-[10px] text-slate-400">Sent blessings</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/30">
+          <span class="text-xs text-amber-300 block">Digital Shagun Received</span>
+          <span id="dash-shagun" class="text-2xl font-bold text-amber-400 font-mono mt-1 block">₹53,600</span>
+          <span class="text-[10px] text-amber-400">Direct to couple's UPI</span>
+        </div>
+      </div>
+
+      <!-- Live Feed -->
+      <div class="space-y-3">
+        <h3 class="text-sm font-semibold text-slate-200 flex items-center justify-between">
+          <span>Live Guest Feed</span>
+          <span class="text-xs text-amber-400 font-mono">Realtime Sync Active</span>
+        </h3>
+        <div id="wishes-feed" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-start text-xs">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-100">Vikram & Neha Singhania</span>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]">Attending (3 Guests)</span>
+              </div>
+              <p class="text-slate-400 text-[11px] mt-1">"Can't wait to dance at the Sangeet night! Heartiest congratulations to Kabir & Ananya."</p>
+            </div>
+            <span class="text-[10px] text-slate-500">10m ago</span>
+          </div>
+          <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-start text-xs">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-100">Rajesh Uncle (London)</span>
+                <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px]">Declined (Sent Shagun ₹5,100)</span>
+              </div>
+              <p class="text-slate-400 text-[11px] mt-1">"Missing the celebration due to international travel, sending all our prayers and shagun!"</p>
+            </div>
+            <span class="text-[10px] text-slate-500">45m ago</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 3D SHAGUN UPI MODAL -->
+  <div id="shagun-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-gradient-to-b from-[#181105] to-[#0a0702] border-2 border-amber-400 rounded-3xl max-w-sm w-full p-6 text-center shadow-[0_0_60px_rgba(212,175,55,0.4)] space-y-4">
+      <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
+        💌
+      </div>
+      <h3 class="font-serif font-bold text-amber-200 text-lg">Digital Shagun Envelope</h3>
+      <p class="text-xs text-slate-300">
+        Amount Selected: <span id="shagun-amount-display" class="font-bold text-amber-400 text-sm">₹1,100</span>
+      </p>
+      
+      <!-- Mock UPI QR Code -->
+      <div class="bg-white p-4 rounded-2xl w-44 h-44 mx-auto flex flex-col items-center justify-center shadow-xl">
+        <div class="grid grid-cols-6 gap-1 w-full h-full p-1 bg-slate-950 rounded-lg">
+          <div class="col-span-2 row-span-2 bg-white rounded-sm"></div>
+          <div class="col-span-2 bg-white"></div>
+          <div class="col-span-2 row-span-2 bg-white rounded-sm"></div>
+          <div class="col-span-2 bg-white"></div>
+          <div class="col-span-2 row-span-2 bg-white rounded-sm"></div>
+          <div class="col-span-2 bg-white"></div>
+        </div>
+      </div>
+
+      <div class="text-xs font-mono text-amber-300">
+        Direct UPI: <span class="font-bold">kabir.ananya@oksbi</span>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="confirmShagun()" class="flex-1 py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-bold rounded-xl text-xs shadow-md cursor-pointer">
+          Simulate Payment Done
+        </button>
+        <button onclick="closeShagunModal()" class="px-4 py-2.5 bg-slate-800 text-slate-300 font-semibold rounded-xl text-xs cursor-pointer">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================== -->
+  <!-- JAVASCRIPT LOGIC (100% BULLETPROOF & NATIVE)   -->
+  <!-- ============================================== -->
+  <script>
+    // 1. GATE OPENING LOGIC
+    let gatesOpened = false;
+
+    function triggerGateOpen() {
+      if (gatesOpened) return;
+      gatesOpened = true;
+
+      // Play royal chime
+      playChime();
+
+      // Trigger 3D door swing
+      const doorsContainer = document.getElementById('doors-container');
+      doorsContainer.classList.add('doors-opened');
+
+      // Hide central seal
+      const seal = document.getElementById('seal-trigger');
+      if (seal) seal.style.display = 'none';
+
+      // After doors swing, fade out overlay smoothly
+      setTimeout(() => {
+        const overlay = document.getElementById('gates-overlay');
+        overlay.style.transition = 'opacity 0.8s ease-out';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          initScratch();
+          initTilt();
+        }, 800);
+      }, 1000);
+    }
+
+    // 2. WEB AUDIO CHIME (100% Browser Native, Zero CDN)
+    let audioContext = null;
+    let isMuted = false;
+
+    function playChime() {
+      try {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        const freqs = [392.00, 493.88, 587.33, 783.99]; // G Major Shehnai chord
+        freqs.forEach((f, i) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, audioContext.currentTime + i * 0.12);
+          gain.gain.setValueAtTime(0.06, audioContext.currentTime + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + i * 0.12 + 1.5);
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.start(audioContext.currentTime + i * 0.12);
+          osc.stop(audioContext.currentTime + i * 0.12 + 1.6);
+        });
+      } catch (e) {
+        console.log("Audio:", e);
+      }
+    }
+
+    function toggleAudio() {
+      const btn = document.getElementById('music-btn');
+      const disc = document.getElementById('music-disc');
+      isMuted = !isMuted;
+      if (isMuted) {
+        btn.textContent = '🔇 Muted';
+        disc.classList.remove('animate-spin-slow');
+      } else {
+        btn.textContent = '🔊 Playing';
+        disc.classList.add('animate-spin-slow');
+        playChime();
+      }
+    }
+
+    // 3. BACKGROUND GOLD SPARKLES CANVAS (Pure Native JS)
+    function initSparkles() {
+      const canvas = document.getElementById('sparkles-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let w = canvas.width = canvas.offsetWidth || 380;
+      let h = canvas.height = canvas.offsetHeight || 750;
+
+      const particles = [];
+      for (let i = 0; i < 40; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 2 + 1,
+          dy: Math.random() * 0.6 + 0.3,
+          dx: (Math.random() - 0.5) * 0.3,
+          opacity: Math.random() * 0.7 + 0.3
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(212, 175, 55, ${p.opacity})`;
+          ctx.fill();
+          p.y += p.dy;
+          p.x += p.dx;
+          if (p.y > h) p.y = 0;
+          if (p.x > w) p.x = 0;
+          if (p.x < 0) p.x = w;
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // 4. HTML5 CANVAS GOLD FOIL SCRATCH CARD
+    function initScratch() {
+      const canvas = document.getElementById('scratch-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      // Draw Gold Foil Gradient
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, '#d4af37');
+      grad.addColorStop(0.3, '#fae588');
+      grad.addColorStop(0.7, '#d4af37');
+      grad.addColorStop(1, '#996515');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Add Gold Dust Foil text
+      ctx.fillStyle = '#422800';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ SCRATCH HERE TO UNVEIL DATE ✨', canvas.width / 2, canvas.height / 2 + 4);
+
+      let isDrawing = false;
+      let count = 0;
+
+      function scratchAt(clientX, clientY) {
+        const box = canvas.getBoundingClientRect();
+        const x = clientX - box.left;
+        const y = clientY - box.top;
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        count++;
+        if (count > 20) {
+          document.getElementById('scratch-feedback').innerHTML = '🎉 <strong class="text-amber-200">Date Revealed! December 14, 2026</strong>';
+        }
+      }
+
+      // Mouse events
+      canvas.addEventListener('mousedown', (e) => { isDrawing = true; scratchAt(e.clientX, e.clientY); });
+      window.addEventListener('mouseup', () => isDrawing = false);
+      canvas.addEventListener('mousemove', (e) => { if (isDrawing) scratchAt(e.clientX, e.clientY); });
+
+      // Touch events
+      canvas.addEventListener('touchstart', (e) => {
+        isDrawing = true;
+        if (e.touches && e.touches[0]) scratchAt(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener('touchend', () => isDrawing = false);
+      canvas.addEventListener('touchmove', (e) => {
+        if (isDrawing && e.touches && e.touches[0]) scratchAt(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+    }
+
+    // 5. 3D TILT CARDS LOGIC
+    function initTilt() {
+      const cards = document.querySelectorAll('.tilt-card');
+      cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left - rect.width / 2;
+          const y = e.clientY - rect.top - rect.height / 2;
+          const rotX = -(y / rect.height) * 10;
+          const rotY = (x / rect.width) * 10;
+          card.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.01)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)';
+        });
+      });
+    }
+
+    // 6. SHAGUN MODAL
+    let currentShagun = '₹1,100';
+    function openShagunModal(amt) {
+      currentShagun = amt;
+      document.getElementById('shagun-amount-display').textContent = amt;
+      document.getElementById('shagun-modal').classList.remove('hidden');
+    }
+    function closeShagunModal() {
+      document.getElementById('shagun-modal').classList.add('hidden');
+    }
+    function confirmShagun() {
+      alert(`🎉 Payment of ${currentShagun} received! Transferred to couple's direct UPI.`);
+      closeShagunModal();
+      document.getElementById('dash-shagun').textContent = '₹54,700';
+    }
+
+    // 7. MULTI-LANGUAGE SWITCHER
+    function changeLanguage(lang) {
+      const sal = document.getElementById('label-salutation');
+      const tag = document.getElementById('label-tagline');
+      if (lang === 'hi') {
+        sal.textContent = '॥ श्री गणेशाय नमः ॥';
+        tag.textContent = 'परिवार सहित आपको हमारे विवाह उत्सव में पधारने का सादर निमंत्रण देते हैं।';
+      } else if (lang === 'gu') {
+        sal.textContent = '॥ શ્રી ગણેશાય નમઃ ॥';
+        tag.textContent = 'અમારા લગ્ન ઉત્સવમાં આપ પરિવાર સાથે પધારી આશીર્વાદ આપો તેવો અમારો આગ્રહ છે.';
+      } else {
+        sal.textContent = 'Shree Ganeshay Namah';
+        tag.textContent = 'Together with their families, request the pleasure of your company to celebrate their wedding union.';
+      }
+    }
+
+    // 8. RSVP SUBMIT HANDLER
+    let totalAttending = 186;
+    let totalRegrets = 18;
+    function handleRSVP(e) {
+      e.preventDefault();
+      const name = document.getElementById('form-name').value;
+      const status = document.getElementById('form-status').value;
+      const count = document.getElementById('form-count').value;
+      const wish = document.getElementById('form-wish').value || 'Heartiest congratulations to the beautiful couple!';
+
+      if (status.includes('Accept')) {
+        totalAttending += parseInt(count);
+        document.getElementById('dash-attending').textContent = totalAttending;
+      } else {
+        totalRegrets += 1;
+        document.getElementById('dash-regrets').textContent = totalRegrets;
+      }
+
+      // Prepend to dashboard feed
+      const feed = document.getElementById('wishes-feed');
+      const div = document.createElement('div');
+      div.className = 'p-3 bg-slate-950 rounded-xl border border-amber-500/40 flex justify-between items-start text-xs';
+      div.innerHTML = `
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-amber-200">${name}</span>
+            <span class="px-2 py-0.5 rounded-full ${status.includes('Accept') ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} text-[10px]">${status} (${count} Guests)</span>
+          </div>
+          <p class="text-slate-300 text-[11px] mt-1">"${wish}"</p>
+        </div>
+        <span class="text-[10px] text-amber-400 font-mono">Just now</span>
+      `;
+      feed.prepend(div);
+
+      document.getElementById('rsvp-toast').classList.remove('hidden');
+      e.target.reset();
+    }
+
+    // 9. SYNC NAMES FROM BUILDER
+    function syncCoupleNames() {
+      const g = document.getElementById('input-groom').value || 'Kabir';
+      const b = document.getElementById('input-bride').value || 'Ananya';
+      document.getElementById('label-couple').textContent = `${g} & ${b}`;
+    }
+
+    // 10. TAB SWITCHER
+    function switchTab(tab) {
+      document.getElementById('view-guest').classList.add('hidden');
+      document.getElementById('view-builder').classList.add('hidden');
+      document.getElementById('view-dashboard').classList.add('hidden');
+
+      document.getElementById('tab-guest-btn').className = 'px-3.5 py-2 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200';
+      document.getElementById('tab-builder-btn').className = 'px-3.5 py-2 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200';
+      document.getElementById('tab-dashboard-btn').className = 'px-3.5 py-2 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200';
+
+      if (tab === 'guest') {
+        document.getElementById('view-guest').classList.remove('hidden');
+        document.getElementById('tab-guest-btn').className = 'px-3.5 py-2 rounded-lg text-xs font-semibold transition-all bg-amber-500 text-slate-950 shadow-md';
+      } else if (tab === 'builder') {
+        document.getElementById('view-builder').classList.remove('hidden');
+        document.getElementById('tab-builder-btn').className = 'px-3.5 py-2 rounded-lg text-xs font-semibold transition-all bg-amber-500 text-slate-950 shadow-md';
+      } else if (tab === 'dashboard') {
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        document.getElementById('tab-dashboard-btn').className = 'px-3.5 py-2 rounded-lg text-xs font-semibold transition-all bg-amber-500 text-slate-950 shadow-md';
+      }
+    }
+
+    // Live countdown tick
+    let sec = 12;
+    setInterval(() => {
+      sec = sec > 0 ? sec - 1 : 59;
+      const el = document.getElementById('countdown-sec');
+      if (el) el.textContent = sec < 10 ? '0' + sec : sec;
+    }, 1000);
+
+    // Init on load
+    window.addEventListener('DOMContentLoaded', () => {
+      initSparkles();
+    });
+  </script>
+</body>
+</html>
