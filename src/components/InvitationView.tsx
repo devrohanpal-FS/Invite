@@ -7,7 +7,7 @@ import AudioPlayer from './AudioPlayer';
 import ScratchCard from './ScratchCard';
 import ShagunModal from './ShagunModal';
 import RSVPForm from './RSVPForm';
-import { MapPin, Navigation, Car, Heart, Share2, Sparkles, Clock } from 'lucide-react';
+import { MapPin, Navigation, Car, Heart, Share2, Sparkles, Clock, X } from 'lucide-react';
 
 interface InvitationViewProps {
   invite: InvitationData;
@@ -50,6 +50,7 @@ export default function InvitationView({
 }: InvitationViewProps) {
   const [gatesUnlocked, setGatesUnlocked] = useState(!showGatesInitial);
   const [shagunOpen, setShagunOpen] = useState(false);
+  const [cabModalOpen, setCabModalOpen] = useState(false);
   const [activeLanguage, setActiveLanguage] = useState<'en' | 'hi' | 'gu'>('en');
 
   // Real-time dynamic countdown timer calculated from invite.weddingDate
@@ -276,11 +277,12 @@ export default function InvitationView({
               <span>Google Maps</span>
             </a>
             <button
-              onClick={() => alert(`Opening cab app with destination set to: ${invite.venueName}!`)}
-              className="flex-1 py-2.5 rounded-xl backdrop-blur-md bg-black/40 border border-amber-400/50 text-amber-300 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-black/60 transition-all cursor-pointer"
+              type="button"
+              onClick={() => setCabModalOpen(true)}
+              className="flex-1 py-2.5 rounded-xl backdrop-blur-md bg-black/40 border border-amber-400/50 text-amber-300 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-black/60 transition-all cursor-pointer shadow-sm active:scale-95"
             >
-              <Car className="w-3.5 h-3.5" />
-              <span>Book Cab</span>
+              <Car className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Book Cab (Uber / Ola)</span>
             </button>
           </div>
         </div>
@@ -342,6 +344,91 @@ export default function InvitationView({
           if (onUpdateShagun) onUpdateShagun(amt);
         }}
       />
+
+      {/* Cab Booking Modal (Uber & Ola Launcher) */}
+      {cabModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0b1710] border-2 border-amber-400/80 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 text-center shadow-2xl relative text-slate-100">
+            <button
+              type="button"
+              onClick={() => setCabModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-2xl mx-auto shadow-inner text-amber-300">
+              🚕
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-300 bg-amber-500/20 px-3 py-0.5 rounded-full border border-amber-500/30">
+                Instant Ride Booking
+              </span>
+              <h3 className="text-xl font-serif font-bold text-amber-200">
+                Book Cab to Venue
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                Choose your cab app. Venue destination will be pre-filled automatically:
+              </p>
+              <div className="p-3 bg-black/50 rounded-2xl border border-amber-500/30 text-xs text-amber-300 font-medium mt-1">
+                📍 <strong className="font-bold">{invite.venueName}</strong>
+                <span className="block text-[11px] text-slate-400 mt-0.5">{invite.venueAddress}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-1">
+              {/* Uber Launcher */}
+              <a
+                href={`https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(invite.venueName + ', ' + (invite.venueAddress || invite.city))}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setCabModalOpen(false)}
+                className="w-full py-3.5 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-white font-bold text-sm flex items-center justify-between border border-white/20 shadow-lg transition-all active:scale-98"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-full bg-white text-black font-black text-xs flex items-center justify-center shadow-inner">
+                    Uber
+                  </span>
+                  <div className="text-left">
+                    <span className="block text-sm font-bold leading-tight">Book on Uber</span>
+                    <span className="block text-[10px] text-neutral-400 font-sans">Opens Uber App / Mobile Web</span>
+                  </div>
+                </div>
+                <span className="text-xs text-neutral-300 font-mono">Launch App →</span>
+              </a>
+
+              {/* Ola Launcher */}
+              <a
+                href={`https://book.olacabs.com/?drop_name=${encodeURIComponent(invite.venueName + ', ' + (invite.venueAddress || invite.city))}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setCabModalOpen(false)}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#c5e840] hover:bg-[#b0d42f] text-neutral-950 font-bold text-sm flex items-center justify-between shadow-lg transition-all active:scale-98"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-full bg-black text-[#c5e840] font-black text-xs flex items-center justify-center shadow-inner">
+                    Ola
+                  </span>
+                  <div className="text-left">
+                    <span className="block text-sm font-bold leading-tight">Book on Ola Cabs</span>
+                    <span className="block text-[10px] text-neutral-800 font-sans">Opens Ola App with Destination</span>
+                  </div>
+                </div>
+                <span className="text-xs text-neutral-800 font-mono">Launch App →</span>
+              </a>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCabModalOpen(false)}
+              className="text-xs text-amber-300 font-semibold hover:underline cursor-pointer pt-1"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

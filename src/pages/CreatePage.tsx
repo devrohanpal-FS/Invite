@@ -40,6 +40,7 @@ import {
   X,
   Image as ImageIcon,
   Camera,
+  Video,
   Share2,
   Copy,
   BarChart3,
@@ -75,7 +76,7 @@ const PHOTO_PRESETS = [
   {
     label: 'Sunset Beach',
     url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
-    caption: 'Under the golden sunset of Dubai',
+    caption: 'Two Hearts, One Journey • Forever Begins Today',
   },
   {
     label: 'Royal Palace',
@@ -95,7 +96,6 @@ const PHOTO_PRESETS = [
 ];
 
 const CAPTION_PRESETS = [
-  'Under the golden sunset of Dubai',
   'Two Hearts, One Journey • Forever Begins Today',
   'Two Souls, One Forever Promise',
   'Our Love Story Begins Here',
@@ -279,9 +279,9 @@ function CreateInviteContent() {
       brideName: 'Gaurav',
       weddingDate: '2026-12-11',
       city: 'Pushkar, Rajasthan',
-      venueName: 'Sh. Akhil Bhartiye, Dadhieech Seva Trust',
-      venueAddress: 'Dadhieech Bhavan, 16 Pushkar Road, Pushkar, Rajasthan',
-      googleMapsUrl: 'https://maps.google.com/?q=Dadhieech+Bhavan+Pushkar+Road',
+      venueName: 'Sh. Akhil Bhartiye, Dadhich Seva Trust',
+      venueAddress: 'Dadhich Bhavan, 16 Pushkar Road, Pushkar, Rajasthan',
+      googleMapsUrl: 'https://maps.google.com/?q=Dadhich+Bhavan+Pushkar+Road',
       salutation: '॥ श्री गणेशाय नमः ॥',
       tagline: 'Together with their families, request the pleasure of your company to celebrate their wedding union.',
       shagunUpiId: 'akshitamishra8000@okhdfcbank',
@@ -289,7 +289,7 @@ function CreateInviteContent() {
       musicTitle: 'Kudmayi - Shehnai Flute',
       fontFamily: "'Playfair Display', serif",
       couplePhoto: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
-      photoSubtitle: 'Under the golden sunset of Dubai',
+      photoSubtitle: '',
       theme: 'emerald',
       loveStory: 'Two best friends from college who realized that forever was better together.',
     };
@@ -483,6 +483,26 @@ function CreateInviteContent() {
       ...prev,
       couplePhoto: undefined,
     }));
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 80 * 1024 * 1024) {
+      alert('Video size exceeds 80MB. Please select a smaller video or compress it.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const dataUrl = uploadEvent.target?.result as string;
+      setFormData((prev) => ({
+        ...prev,
+        introVideoUrl: dataUrl,
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveAndPublish = async (e: React.FormEvent) => {
@@ -945,7 +965,7 @@ function CreateInviteContent() {
                     type="text"
                     value={formData.photoSubtitle || ''}
                     onChange={(e) => setFormData({ ...formData, photoSubtitle: e.target.value })}
-                    placeholder="e.g. Under the golden sunset of Dubai / Two Hearts, One Journey"
+                    placeholder="e.g. Two Hearts, One Journey • Forever Begins Today"
                     className="w-full px-3.5 py-2.5 bg-white border border-[#d7c5a4] rounded-xl text-[#2b2220] focus:outline-none focus:border-[#b8860b] shadow-2xs text-xs"
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -960,6 +980,52 @@ function CreateInviteContent() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Intro Fullscreen Video Upload */}
+                <div className="pt-3 border-t border-[#d7c5a4]/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[#2b2220] font-semibold text-xs flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-[#b8860b]" />
+                      <span>Intro Fullscreen Video (Autoplay on Open)</span>
+                    </label>
+                    {formData.introVideoUrl && (
+                      <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-mono font-bold">
+                        ✓ Video Active
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <label className="flex-1 cursor-pointer py-2.5 px-3 bg-white border border-[#d7c5a4] hover:border-[#b8860b] rounded-xl text-xs text-[#2b2220] font-semibold flex items-center justify-center gap-2 transition-all shadow-xs">
+                      <Camera className="w-3.5 h-3.5 text-[#b8860b]" />
+                      <span>Upload New Video (MP4 / WebM)</span>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime"
+                        className="hidden"
+                        onChange={handleVideoUpload}
+                      />
+                    </label>
+                    {formData.introVideoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, introVideoUrl: '' })}
+                        className="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Remove Video</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={formData.introVideoUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, introVideoUrl: e.target.value })}
+                    placeholder="Or paste video link / file path (e.g. /videos/wedding-invite.mp4)"
+                    className="w-full px-3.5 py-2 bg-white border border-[#d7c5a4] rounded-xl text-[#2b2220] focus:outline-none focus:border-[#b8860b] shadow-2xs text-xs font-mono"
+                  />
                 </div>
               </div>
             )}
@@ -1045,7 +1111,7 @@ function CreateInviteContent() {
                     required
                     value={formData.venueName}
                     onChange={(e) => setFormData({ ...formData, venueName: e.target.value })}
-                    placeholder="e.g. Sh. Akhil Bhartiye, Dadhieech Seva Trust"
+                    placeholder="e.g. Sh. Akhil Bhartiye, Dadhich Seva Trust"
                     className="w-full px-3.5 py-2.5 bg-[#ffffff] border border-[#d7c5a4] rounded-xl text-[#2b2220] focus:outline-none focus:border-[#b8860b] shadow-2xs"
                   />
                 </div>
@@ -1057,7 +1123,7 @@ function CreateInviteContent() {
                     required
                     value={formData.venueAddress}
                     onChange={(e) => setFormData({ ...formData, venueAddress: e.target.value })}
-                    placeholder="e.g. Dadhieech Bhavan, 16 Pushkar Road, Pushkar, Rajasthan"
+                    placeholder="e.g. Dadhich Bhavan, 16 Pushkar Road, Pushkar, Rajasthan"
                     className="w-full px-3.5 py-2.5 bg-[#ffffff] border border-[#d7c5a4] rounded-xl text-[#2b2220] focus:outline-none focus:border-[#b8860b] shadow-2xs"
                   />
                 </div>

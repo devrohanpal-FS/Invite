@@ -17,6 +17,7 @@ import {
   Sparkles,
   Gift,
   Check,
+  X,
 } from 'lucide-react';
 
 interface VeerZaraProps {
@@ -59,6 +60,7 @@ export default function VeerZaraView({
   showCurtainInitial = true,
 }: VeerZaraProps) {
   const [shagunOpen, setShagunOpen] = useState(false);
+  const [cabModalOpen, setCabModalOpen] = useState(false);
   const [activeLang, setActiveLang] = useState<'en' | 'hi' | 'gu'>('en');
   const [showIntroVideo, setShowIntroVideo] = useState(showCurtainInitial);
   const [introScrolledPast, setIntroScrolledPast] = useState(!showCurtainInitial);
@@ -181,37 +183,6 @@ export default function VeerZaraView({
         id="wedding-website-content"
         className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 relative z-20"
       >
-        {/* Sticky Audio & Language Bar */}
-        <div className="flex items-center justify-between gap-2 sticky top-2 z-30">
-          <div className="flex-1">
-            <AudioPlayer
-              title={invite.musicTitle || 'Afreen Afreen - Shehnai Flute'}
-              musicUrl={invite.musicUrl}
-              autoPlay={introScrolledPast}
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleScrollToIntro}
-            className="backdrop-blur-xl bg-white/70 hover:bg-white/90 text-[#943445] text-[10px] font-bold rounded-full px-2.5 py-1.5 border border-rose-200 focus:outline-none cursor-pointer shadow-sm flex items-center gap-1 transition-all"
-            title="Watch Intro Video"
-          >
-            <span>🎬</span>
-            <span>Intro</span>
-          </button>
-
-          <select
-            value={activeLang}
-            onChange={(e) => setActiveLang(e.target.value as 'en' | 'hi' | 'gu')}
-            className="backdrop-blur-xl bg-white/60 text-[#943445] text-[10px] font-bold rounded-full px-3 py-1.5 border border-rose-200 focus:outline-none cursor-pointer shadow-sm"
-          >
-            <option value="en">EN</option>
-            <option value="hi">हिन्दी</option>
-            <option value="gu">ગુજરાતી</option>
-          </select>
-        </div>
-
         {/* HERO SECTION: Sunset Terrace with Rose Garland & Doves */}
         <div className="text-center pt-2 space-y-2">
           
@@ -289,9 +260,11 @@ export default function VeerZaraView({
                 >
                   {invite.groomName} &amp; {invite.brideName}
                 </p>
-                <p className="text-xs text-slate-700 italic mt-1 font-sans">
-                  {invite.photoSubtitle || 'Two souls unite under the sacred blessings of God'}
-                </p>
+                {invite.photoSubtitle && (
+                  <p className="text-xs text-slate-700 italic mt-1 font-sans">
+                    {invite.photoSubtitle}
+                  </p>
+                )}
                 <div className="mt-3 px-3.5 py-1 rounded-full backdrop-blur-md bg-[#943445]/10 border border-[#943445]/30 text-[10px] text-[#852839] font-mono font-bold">
                   ✦ {invite.weddingDate} ✦
                 </div>
@@ -383,14 +356,14 @@ export default function VeerZaraView({
         </div>
 
         {/* 5. VENUE & GOOGLE MAPS */}
-        <div className="p-5 rounded-3xl backdrop-blur-2xl bg-white/50 border border-rose-200 text-center space-y-3 shadow-md">
-          <div className="w-10 h-10 rounded-full bg-rose-100 border border-rose-300 flex items-center justify-center text-[#943445] mx-auto">
-            <MapPin className="w-5 h-5" />
+        <div className="p-6 sm:p-7 rounded-3xl backdrop-blur-2xl bg-white/60 border border-rose-200 text-center space-y-3.5 shadow-md">
+          <div className="w-12 h-12 rounded-full bg-rose-100 border border-rose-300 flex items-center justify-center text-[#943445] mx-auto shadow-sm">
+            <MapPin className="w-6 h-6" />
           </div>
-          <div>
-            <h3 className="font-['Great_Vibes',cursive] text-3xl text-[#852839]">Venue</h3>
-            <h4 className="font-serif font-bold text-[#422227] text-base mt-1">{invite.venueName}</h4>
-            <p className="text-xs text-[#6e464c] mt-0.5 leading-relaxed">{invite.venueAddress}</p>
+          <div className="space-y-1.5">
+            <h3 className="font-['Great_Vibes',cursive] text-3xl sm:text-4xl text-[#852839]">Wedding Venue</h3>
+            <h4 className="font-serif font-black text-[#422227] text-xl sm:text-2xl tracking-wide">{invite.venueName}</h4>
+            <p className="text-sm sm:text-base font-semibold text-[#6e464c] leading-relaxed max-w-lg mx-auto">{invite.venueAddress}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
@@ -398,18 +371,18 @@ export default function VeerZaraView({
               href={invite.googleMapsUrl || `https://maps.google.com/?q=${encodeURIComponent(invite.venueName + ' ' + invite.venueAddress)}`}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-[#852839] hover:bg-[#6e1e2d] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
+              className="flex-1 min-h-[46px] py-2.5 px-3 rounded-xl bg-[#852839] hover:bg-[#6e1e2d] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
             >
-              <Navigation className="w-3.5 h-3.5" />
+              <Navigation className="w-4 h-4" />
               <span>Get Venue Directions</span>
             </a>
             <button
               type="button"
-              onClick={() => alert(`Opening cab app with destination set to: ${invite.venueName}!`)}
-              className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-white border border-rose-300 text-[#852839] text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-rose-50 transition-all cursor-pointer shadow-sm"
+              onClick={() => setCabModalOpen(true)}
+              className="flex-1 min-h-[46px] py-2.5 px-3 rounded-xl bg-white border-2 border-rose-300 text-[#852839] text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-rose-50 transition-all cursor-pointer shadow-sm active:scale-95"
             >
-              <Car className="w-3.5 h-3.5" />
-              <span>Book Uber / Cab</span>
+              <Car className="w-4 h-4 text-emerald-600" />
+              <span>Book Cab (Uber / Ola)</span>
             </button>
           </div>
         </div>
@@ -487,6 +460,91 @@ export default function VeerZaraView({
           if (onUpdateShagun) onUpdateShagun(amt);
         }}
       />
+
+      {/* Cab Booking Modal (Direct Uber / Ola App Launcher) */}
+      {cabModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#fff9fa] border-2 border-rose-300 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 text-center shadow-2xl relative">
+            <button
+              type="button"
+              onClick={() => setCabModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-slate-500 hover:bg-rose-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 rounded-full bg-rose-100 border-2 border-rose-300 flex items-center justify-center text-2xl mx-auto shadow-inner">
+              🚕
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#943445] bg-rose-100 px-3 py-0.5 rounded-full">
+                Instant Ride Booking
+              </span>
+              <h3 className="text-xl font-serif font-bold text-[#422227]">
+                Book Cab to Venue
+              </h3>
+              <p className="text-xs text-[#6e464c] leading-relaxed max-w-xs mx-auto">
+                Tap your preferred cab app below. Venue destination will be pre-filled automatically:
+              </p>
+              <div className="p-3 bg-rose-50/80 rounded-2xl border border-rose-200 text-xs text-[#852839] font-medium mt-1">
+                📍 <strong className="font-bold">{invite.venueName}</strong>
+                <span className="block text-[11px] text-[#6e464c] mt-0.5">{invite.venueAddress}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-1">
+              {/* Uber Launcher */}
+              <a
+                href={`https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(invite.venueName + ', ' + (invite.venueAddress || invite.city))}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setCabModalOpen(false)}
+                className="w-full py-3.5 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-white font-bold text-sm flex items-center justify-between shadow-lg transition-all active:scale-98"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-full bg-white text-black font-black text-xs flex items-center justify-center shadow-inner">
+                    Uber
+                  </span>
+                  <div className="text-left">
+                    <span className="block text-sm font-bold leading-tight">Book on Uber</span>
+                    <span className="block text-[10px] text-neutral-400 font-sans">Opens Uber App / Mobile Web</span>
+                  </div>
+                </div>
+                <span className="text-xs text-neutral-300 font-mono">Launch App →</span>
+              </a>
+
+              {/* Ola Launcher */}
+              <a
+                href={`https://book.olacabs.com/?drop_name=${encodeURIComponent(invite.venueName + ', ' + (invite.venueAddress || invite.city))}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setCabModalOpen(false)}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#c5e840] hover:bg-[#b0d42f] text-neutral-950 font-bold text-sm flex items-center justify-between shadow-lg transition-all active:scale-98"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-full bg-black text-[#c5e840] font-black text-xs flex items-center justify-center shadow-inner">
+                    Ola
+                  </span>
+                  <div className="text-left">
+                    <span className="block text-sm font-bold leading-tight">Book on Ola Cabs</span>
+                    <span className="block text-[10px] text-neutral-800 font-sans">Opens Ola App with Destination</span>
+                  </div>
+                </div>
+                <span className="text-xs text-neutral-800 font-mono">Launch App →</span>
+              </a>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCabModalOpen(false)}
+              className="text-xs text-[#852839] font-semibold hover:underline cursor-pointer pt-1"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
