@@ -1,4 +1,7 @@
 import type { InvitationData, RSVPResponse } from '../types/invite';
+import seedInvitationsData from '../data/seed-invitations.json';
+
+const SEED_INVITATIONS = seedInvitationsData as unknown as Record<string, InvitationData>;
 
 export const DEFAULT_INVITATION: InvitationData = {
   id: 'royal-demo-1',
@@ -216,34 +219,31 @@ export function getStoredInvitations(): Record<string, InvitationData> {
     return res;
   };
 
+  const initialDefaults: Record<string, InvitationData> = {
+    [DEFAULT_INVITATION.slug]: DEFAULT_INVITATION,
+    [SAM_SOFIA_INVITATION.slug]: SAM_SOFIA_INVITATION,
+    [VEER_ZARA_INVITATION.slug]: VEER_ZARA_INVITATION,
+    ...(SEED_INVITATIONS || {}),
+  };
+
   if (typeof window === 'undefined') {
-    return sanitizeAll({
-      [DEFAULT_INVITATION.slug]: DEFAULT_INVITATION,
-      [SAM_SOFIA_INVITATION.slug]: SAM_SOFIA_INVITATION,
-      [VEER_ZARA_INVITATION.slug]: VEER_ZARA_INVITATION,
-    });
+    return sanitizeAll(initialDefaults);
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const initial = {
-        [DEFAULT_INVITATION.slug]: DEFAULT_INVITATION,
-        [SAM_SOFIA_INVITATION.slug]: SAM_SOFIA_INVITATION,
-        [VEER_ZARA_INVITATION.slug]: VEER_ZARA_INVITATION,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-      return sanitizeAll(initial);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialDefaults));
+      return sanitizeAll(initialDefaults);
     }
     const parsed = JSON.parse(raw);
-    if (!parsed['sam-sofia']) parsed['sam-sofia'] = SAM_SOFIA_INVITATION;
-    if (!parsed['veer-zara']) parsed['veer-zara'] = VEER_ZARA_INVITATION;
+    for (const key of Object.keys(initialDefaults)) {
+      if (!parsed[key]) {
+        parsed[key] = initialDefaults[key];
+      }
+    }
     return sanitizeAll(parsed);
   } catch {
-    return sanitizeAll({
-      [DEFAULT_INVITATION.slug]: DEFAULT_INVITATION,
-      [SAM_SOFIA_INVITATION.slug]: SAM_SOFIA_INVITATION,
-      [VEER_ZARA_INVITATION.slug]: VEER_ZARA_INVITATION,
-    });
+    return sanitizeAll(initialDefaults);
   }
 }
 
@@ -252,6 +252,9 @@ export function getInvitationBySlug(slug: string): InvitationData {
   const found = invites[slug];
   if (found) return sanitizeInvite(found);
 
+  if (SEED_INVITATIONS && SEED_INVITATIONS[slug]) {
+    return sanitizeInvite(SEED_INVITATIONS[slug]);
+  }
   if (slug === 'veer-zara') return sanitizeInvite(VEER_ZARA_INVITATION);
   if (slug === 'sam-sofia') return sanitizeInvite(SAM_SOFIA_INVITATION);
   if (slug === 'kabir-ananya') return sanitizeInvite(DEFAULT_INVITATION);

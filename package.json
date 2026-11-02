@@ -2,23 +2,25 @@
   "name": "invite",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "build:static": "node scripts/build-static.mjs",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",
+    "@vitejs/plugin-react": "^6.1.2",
     "clsx": "^2.1.1",
     "framer-motion": "^11.11.9",
     "lucide-react": "^0.453.0",
-    "next": "14.2.15",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.4"
+    "react-router-dom": "^7.18.5",
+    "tailwind-merge": "^2.5.4",
+    "vite": "^8.3.5"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",

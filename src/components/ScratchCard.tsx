@@ -225,7 +225,7 @@ export default function ScratchCard({
               {h.icon}
             </span>
           ))}
-          <style jsx>{`
+          <style>{`
             @keyframes heartFall {
               0% {
                 transform: translateY(0px) rotate(0deg) scale(0.6);
