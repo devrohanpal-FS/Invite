@@ -269,6 +269,7 @@ function CreateInviteContent() {
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCurrentUser>>(null);
   const [customSlug, setCustomSlug] = useState('');
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+  const [simPreviewMode, setSimPreviewMode] = useState<'card' | 'intro'>('card');
 
   // Initialize form data
   const [formData, setFormData] = useState<InvitationData>(() => {
@@ -486,7 +487,7 @@ function CreateInviteContent() {
     }));
   };
 
-  const handleSaveAndPublish = (e: React.FormEvent) => {
+  const handleSaveAndPublish = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanGroom = formData.groomName.toLowerCase().replace(/[^a-z0-9]/g, '');
     const cleanBride = formData.brideName.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -499,8 +500,22 @@ function CreateInviteContent() {
       slug: finalSlug,
       events: formData.events || [],
     };
+
+    // 1. Save locally
     saveInvitation(finalized);
     linkInviteToCurrentUser(finalSlug);
+
+    // 2. Persist to server API so any guest link works on any device
+    try {
+      await fetch('/api/invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalized),
+      });
+    } catch (err) {
+      console.warn('Could not persist to server API:', err);
+    }
+
     setPublishedSlug(finalSlug);
     setSaveSuccess(true);
     setPublishedModalOpen(true);
@@ -1622,20 +1637,44 @@ function CreateInviteContent() {
 
         {/* Right Column: Live Phone Mockup Preview */}
         <div className="lg:col-span-5 flex flex-col items-center sticky top-20">
-          <div className="mb-2 text-center flex items-center justify-center gap-2">
+          <div className="mb-2 text-center flex flex-col items-center justify-center gap-1.5 w-full">
             <span className="text-[11px] font-mono text-[#b8860b] bg-[#e8dcc6] px-3.5 py-1 rounded-full border border-[#d7c5a4] font-semibold flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span>Live Phone Simulator • Character Sync</span>
             </span>
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setSimPreviewMode('card')}
+                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                  simPreviewMode === 'card'
+                    ? 'bg-[#722f37] text-white shadow-xs'
+                    : 'bg-[#e8dcc6] text-[#722f37] hover:bg-[#ded1ba]'
+                }`}
+              >
+                📱 Full Website View
+              </button>
+              <button
+                type="button"
+                onClick={() => setSimPreviewMode('intro')}
+                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                  simPreviewMode === 'intro'
+                    ? 'bg-[#722f37] text-white shadow-xs'
+                    : 'bg-[#e8dcc6] text-[#722f37] hover:bg-[#ded1ba]'
+                }`}
+              >
+                🎬 Intro Video/Gate View
+              </button>
+            </div>
           </div>
 
           <PhoneMockup>
             {isCurrentRose ? (
-              <VeerZaraView invite={formData} showCurtainInitial={false} />
+              <VeerZaraView invite={formData} showCurtainInitial={simPreviewMode === 'intro'} />
             ) : isCurrentBloom ? (
-              <RoyalMonarchView invite={formData} showCurtainInitial={false} />
+              <RoyalMonarchView invite={formData} showCurtainInitial={simPreviewMode === 'intro'} />
             ) : (
-              <InvitationView invite={formData} showGatesInitial={false} />
+              <InvitationView invite={formData} showGatesInitial={simPreviewMode === 'intro'} />
             )}
           </PhoneMockup>
         </div>

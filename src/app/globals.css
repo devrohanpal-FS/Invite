@@ -10,10 +10,33 @@
   --color-burgundy: #722f37;
 }
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 100%;
+  -webkit-overflow-scrolling: touch;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background-color: #fbf8f1;
   color: #2b2220;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safe area insets for iPhone Notch / Dynamic Island / Home Indicator */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent unwanted horizontal drag and jitter on mobile */
+* {
+  box-sizing: border-box;
 }
 
 /* Custom Scrollbars */
@@ -21,7 +44,7 @@ body {
   width: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #fbf8f1;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #d4c5a9;

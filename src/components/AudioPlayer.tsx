@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Volume2, VolumeX, Disc } from 'lucide-react';
 
 interface AudioPlayerProps {
@@ -23,39 +23,72 @@ export default function AudioPlayer({
     setIsPlaying(autoPlay);
   }, [autoPlay]);
 
-  const playLuxuryChime = () => {
+  const playLuxuryChime = useCallback(() => {
     try {
+      if (typeof window === 'undefined') return;
+      const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtxClass) return;
+
       if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        audioCtxRef.current = new AudioCtxClass();
       }
       const ctx = audioCtxRef.current;
       if (ctx.state === 'suspended') {
-        ctx.resume();
+        ctx.resume().catch(() => {});
       }
 
       // Melodious G-Major Indian wedding shehnai progression
       const frequencies = [392.00, 493.88, 587.33, 783.99];
       frequencies.forEach((f, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.12);
-        gain.gain.setValueAtTime(0.05, ctx.currentTime + i * 0.12);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.12 + 1.4);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + i * 0.12);
-        osc.stop(ctx.currentTime + i * 0.12 + 1.5);
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.12);
+          gain.gain.setValueAtTime(0.04, ctx.currentTime + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.12 + 1.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.12);
+          osc.stop(ctx.currentTime + i * 0.12 + 1.5);
+        } catch {
+          // oscillator error ignore
+        }
       });
     } catch {
-      // Audio context restricted until interaction
+      // Audio context restricted until user interaction
     }
-  };
+  }, []);
+
+  // One-time unlock for mobile browsers (iOS Safari / Android Chrome)
+  useEffect(() => {
+    const handleFirstGesture = () => {
+      if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume().catch(() => {});
+      }
+      if (audioElRef.current && isPlaying) {
+        audioElRef.current.play().catch(() => {});
+      }
+    };
+
+    window.addEventListener('touchstart', handleFirstGesture, { once: true, passive: true });
+    window.addEventListener('click', handleFirstGesture, { once: true, passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleFirstGesture);
+      window.removeEventListener('click', handleFirstGesture);
+    };
+  }, [isPlaying]);
 
   useEffect(() => {
     if (musicUrl && audioElRef.current) {
       if (isPlaying) {
-        audioElRef.current.play().catch(() => {});
+        const playPromise = audioElRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Autoplay blocked until gesture
+          });
+        }
       } else {
         audioElRef.current.pause();
       }
@@ -68,25 +101,31 @@ export default function AudioPlayer({
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying, musicUrl]);
+  }, [isPlaying, musicUrl, playLuxuryChime]);
 
-  const toggleAudio = () => {
+  const toggleAudio = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume().catch(() => {});
+    }
     setIsPlaying(!isPlaying);
   };
 
   return (
-    <div className="sticky top-2 z-30 flex items-center justify-between bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-amber-500/30 shadow-xl">
-      <div className="flex items-center gap-2">
-        <Disc className={`w-4 h-4 text-amber-400 ${isPlaying ? 'animate-spin-slow' : ''}`} />
-        <span className="text-[11px] text-amber-200 font-medium truncate max-w-[130px]">{title}</span>
+    <div className="sticky top-2 z-30 flex items-center justify-between bg-black/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-amber-500/30 shadow-xl max-w-full">
+      <div className="flex items-center gap-2 min-w-0 pr-2">
+        <Disc className={`w-4 h-4 text-amber-400 shrink-0 ${isPlaying ? 'animate-spin-slow' : ''}`} />
+        <span className="text-[11px] text-amber-200 font-medium truncate">{title}</span>
       </div>
 
       <button
+        type="button"
         onClick={toggleAudio}
-        className="px-2.5 py-1 rounded-full bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/40 text-[10px] text-amber-200 font-bold flex items-center gap-1 transition-all cursor-pointer"
+        className="px-2.5 py-1 rounded-full bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/40 text-[10px] text-amber-200 font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0"
       >
         {isPlaying ? (
           <>
@@ -98,12 +137,14 @@ export default function AudioPlayer({
           </>
         )}
       </button>
+
       {musicUrl && (
         <audio
           ref={audioElRef}
           src={musicUrl}
           loop
           preload="auto"
+          playsInline
         />
       )}
     </div>

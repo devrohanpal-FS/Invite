@@ -12,6 +12,7 @@
 
 # Production
 /build
+public_html_build.zip
 
 # Misc
 .DS_Store

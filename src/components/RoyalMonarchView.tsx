@@ -91,12 +91,12 @@ export default function RoyalMonarchView({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[750px] bg-gradient-to-b from-[#a9d0f5] via-[#cde4f7] to-[#eaf4fc] text-[#1c3554] flex flex-col overflow-hidden font-serif selection:bg-[#38bdf8] selection:text-white">
+    <div className="relative w-full h-full min-h-screen min-h-[100dvh] bg-gradient-to-b from-[#a9d0f5] via-[#cde4f7] to-[#eaf4fc] text-[#1c3554] flex flex-col overflow-hidden font-serif selection:bg-[#38bdf8] selection:text-white">
       
       {/* 3D DRAPED SILK CURTAINS OPENING OVERLAY */}
       {!curtainsOpened && (
         <div
-          className="absolute inset-0 z-50 bg-[#16293d] flex flex-col justify-between overflow-hidden transition-all duration-1000"
+          className="absolute inset-0 z-50 bg-[#16293d] flex flex-col justify-between overflow-hidden transition-all duration-1000 safe-area-top safe-area-bottom"
           style={{ perspective: '1200px' }}
         >
           {/* Top arch & pearls */}
@@ -113,7 +113,7 @@ export default function RoyalMonarchView({
           </div>
 
           {/* Double Silk Draped Curtains */}
-          <div className="relative flex-1 mx-4 my-2 flex overflow-hidden rounded-3xl border-2 border-white/40 shadow-[0_0_50px_rgba(0,0,0,0.6)]">
+          <div className="relative flex-1 mx-4 sm:mx-auto my-2 flex overflow-hidden rounded-3xl border-2 border-white/40 shadow-[0_0_50px_rgba(0,0,0,0.6)] max-w-xl w-full">
             {/* Left Curtain */}
             <div className="w-1/2 h-full bg-gradient-to-r from-[#22405d] via-[#355b82] to-[#4a77a5] border-r border-white/40 flex flex-col justify-between p-4 shadow-2xl relative">
               <span className="text-white/40 text-2xl">⚜</span>
@@ -146,7 +146,7 @@ export default function RoyalMonarchView({
             </div>
           </div>
 
-          <div className="relative z-10 pb-6 text-center px-6">
+          <div className="relative z-10 pb-6 sm:pb-8 text-center px-6 max-w-xl mx-auto w-full">
             <button
               onClick={handleOpenCurtains}
               className="w-full py-3 bg-white/20 hover:bg-white/30 border border-white/40 rounded-xl text-xs text-white font-bold tracking-wider uppercase font-sans transition-all cursor-pointer"
@@ -176,7 +176,7 @@ export default function RoyalMonarchView({
       </div>
 
       {/* Main Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6 relative z-20">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 relative z-20 max-w-2xl mx-auto w-full overscroll-contain">
         
         {/* Sticky Music & Language Bar */}
         <div className="flex items-center justify-between gap-2">

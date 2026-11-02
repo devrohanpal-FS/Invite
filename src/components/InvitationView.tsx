@@ -92,7 +92,7 @@ export default function InvitationView({
   const textSubColor = isSkyTheme ? 'text-[#335c8d]' : 'text-amber-200/90';
 
   return (
-    <div className={`relative w-full h-full min-h-[750px] flex flex-col overflow-hidden text-slate-100 ${bgGradient}`}>
+    <div className={`relative w-full h-full min-h-screen min-h-[100dvh] flex flex-col overflow-hidden text-slate-100 ${bgGradient}`}>
       
       {/* 3D Palace Gate Opening Overlay */}
       {!gatesUnlocked && (
@@ -104,7 +104,7 @@ export default function InvitationView({
       )}
 
       {/* Main Scrollable Invitation Page */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 overscroll-contain max-w-2xl mx-auto w-full">
         
         {/* Sticky Music & Language Bar (Glassmorphic) */}
         <div className="flex items-center justify-between gap-2">

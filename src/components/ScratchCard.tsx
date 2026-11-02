@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Heart, Sparkles } from 'lucide-react';
 
 interface ScratchCardProps {
@@ -49,17 +49,54 @@ export default function ScratchCard({
 
   const formattedDate = getFormattedDate(weddingDate);
 
+  // Trigger Heart Rain & Auto-Clear 100%
+  const triggerAutoClearAndHeartRain = useCallback(() => {
+    setIsFullyRevealed(true);
+    setShowHeartRain(true);
+    setScratchProgress(100);
+
+    // Generate 35 raining heart particles
+    const emojis = ['💖', '❤️', '💕', '✨', '💐', '💍'];
+    const newHearts = Array.from({ length: 35 }, (_, idx) => ({
+      id: idx,
+      left: Math.random() * 92 + 4,
+      size: Math.random() * 14 + 16,
+      delay: Math.random() * 1.5,
+      icon: emojis[Math.floor(Math.random() * emojis.length)],
+    }));
+    setHearts(newHearts);
+
+    if (onFullyRevealed) onFullyRevealed();
+
+    // Fade out canvas automatically
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+      canvas.style.opacity = '0';
+      canvas.style.transform = 'scale(1.04)';
+      setTimeout(() => {
+        canvas.style.display = 'none';
+      }, 600);
+    }
+  }, [onFullyRevealed]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || isFullyRevealed) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    const width = (canvas.width = canvas.offsetWidth);
-    const height = (canvas.height = canvas.offsetHeight);
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    const rect = canvas.getBoundingClientRect();
+    const cssWidth = rect.width || canvas.offsetWidth || 300;
+    const cssHeight = rect.height || canvas.offsetHeight || 130;
+
+    canvas.width = Math.floor(cssWidth * dpr);
+    canvas.height = Math.floor(cssHeight * dpr);
+    ctx.scale(dpr, dpr);
 
     // Render Metallic Gold / Silver Foil
-    const grad = ctx.createLinearGradient(0, 0, width, height);
+    const grad = ctx.createLinearGradient(0, 0, cssWidth, cssHeight);
     if (shape === 'heart') {
       grad.addColorStop(0, '#fce38a');
       grad.addColorStop(0.3, '#d4af37');
@@ -71,50 +108,50 @@ export default function ScratchCard({
       grad.addColorStop(1, '#c5ae84');
     }
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
 
     // Decorative Text & Emblem
     ctx.fillStyle = '#422800';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✨ SCRATCH HERE ✨', width / 2, height / 2 + 4);
+    ctx.fillText('✨ SCRATCH HERE ✨', cssWidth / 2, cssHeight / 2 + 4);
 
     let isScratching = false;
 
     // Calculate how much has been scratched
     const checkProgress = () => {
       try {
-        const imageData = ctx.getImageData(0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = imageData.data;
         let transparentPixels = 0;
         const totalSampled = pixels.length / 4;
 
-        // Sample every 4th pixel for high performance
-        for (let i = 3; i < pixels.length; i += 16) {
+        // Sample every 8th pixel for high performance on mobile devices
+        for (let i = 3; i < pixels.length; i += 32) {
           if (pixels[i] === 0) transparentPixels++;
         }
 
-        const percentage = Math.round((transparentPixels / (totalSampled / 4)) * 100);
-        setScratchProgress(percentage);
+        const percentage = Math.round((transparentPixels / (totalSampled / 8)) * 100);
+        setScratchProgress(Math.min(100, percentage));
 
-        // When >= 55%-60% is scratched, trigger Heart Rain & Auto-Clear 100%!
-        if (percentage >= 55 && !isFullyRevealed) {
+        // When >= 50% is scratched, trigger Heart Rain & Auto-Clear 100%!
+        if (percentage >= 50) {
           triggerAutoClearAndHeartRain();
         }
       } catch (err) {
-        console.error(err);
+        console.error('Scratch checkProgress error:', err);
       }
     };
 
     const scratchAt = (clientX: number, clientY: number) => {
-      if (isFullyRevealed) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      const currentRect = canvas.getBoundingClientRect();
+      const x = clientX - currentRect.left;
+      const y = clientY - currentRect.top;
 
       ctx.globalCompositeOperation = 'destination-out';
       ctx.beginPath();
-      ctx.arc(x, y, 26, 0, Math.PI * 2);
+      // Generous 28px scratch radius for easy mobile finger touch
+      ctx.arc(x, y, 28, 0, Math.PI * 2);
       ctx.fill();
 
       checkProgress();
@@ -127,23 +164,33 @@ export default function ScratchCard({
     const onMouseMove = (e: MouseEvent) => {
       if (isScratching) scratchAt(e.clientX, e.clientY);
     };
-    const onMouseUp = () => (isScratching = false);
+    const onMouseUp = () => {
+      isScratching = false;
+    };
 
     const onTouchStart = (e: TouchEvent) => {
       isScratching = true;
-      if (e.touches[0]) scratchAt(e.touches[0].clientX, e.touches[0].clientY);
+      if (e.touches[0]) {
+        if (e.cancelable) e.preventDefault();
+        scratchAt(e.touches[0].clientX, e.touches[0].clientY);
+      }
     };
     const onTouchMove = (e: TouchEvent) => {
-      if (isScratching && e.touches[0]) scratchAt(e.touches[0].clientX, e.touches[0].clientY);
+      if (!isScratching) return;
+      if (e.cancelable) e.preventDefault();
+      if (e.touches[0]) scratchAt(e.touches[0].clientX, e.touches[0].clientY);
     };
-    const onTouchEnd = () => (isScratching = false);
+    const onTouchEnd = () => {
+      isScratching = false;
+    };
 
     canvas.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    canvas.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    // Touch events attached strictly to CANVAS so the rest of the page scrolls natively!
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onTouchEnd);
 
     return () => {
@@ -151,45 +198,15 @@ export default function ScratchCard({
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       canvas.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [isFullyRevealed, shape]);
-
-  // Trigger Heart Rain & Auto-Clear 100%
-  const triggerAutoClearAndHeartRain = () => {
-    setIsFullyRevealed(true);
-    setShowHeartRain(true);
-
-    // Generate 35 raining heart particles
-    const emojis = ['💖', '❤️', '💕', '✨', '💐', '💍'];
-    const newHearts = Array.from({ length: 35 }, (_, idx) => ({
-      id: idx,
-      left: Math.random() * 92 + 4, // 4% to 96%
-      size: Math.random() * 14 + 16, // 16px to 30px
-      delay: Math.random() * 1.5, // 0 to 1.5s delay
-      icon: emojis[Math.floor(Math.random() * emojis.length)],
-    }));
-    setHearts(newHearts);
-
-    if (onFullyRevealed) onFullyRevealed();
-
-    // Fade out canvas automatically
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-      canvas.style.opacity = '0';
-      canvas.style.transform = 'scale(1.05)';
-      setTimeout(() => {
-        canvas.style.display = 'none';
-      }, 600);
-    }
-  };
+  }, [isFullyRevealed, shape, triggerAutoClearAndHeartRain]);
 
   return (
     <div
       ref={containerRef}
-      className="relative p-5 rounded-3xl backdrop-blur-xl bg-white/20 border border-white/40 shadow-2xl text-center space-y-3 overflow-hidden"
+      className="relative p-4 sm:p-5 rounded-3xl backdrop-blur-xl bg-white/20 border border-white/40 shadow-2xl text-center space-y-3 overflow-hidden select-none"
     >
       {/* HEART BURST & HEART RAIN OVERLAY */}
       {showHeartRain && (
@@ -197,7 +214,7 @@ export default function ScratchCard({
           {hearts.map((h) => (
             <span
               key={h.id}
-              className="absolute animate-bounce"
+              className="absolute"
               style={{
                 left: `${h.left}%`,
                 top: '-20px',
@@ -242,7 +259,7 @@ export default function ScratchCard({
           <span className="text-[10px] font-serif uppercase tracking-widest text-amber-300 font-bold">
             The Celebration Begins
           </span>
-          <span className="text-2xl md:text-3xl font-serif font-black text-amber-100 tracking-wide drop-shadow-md">
+          <span className="text-xl sm:text-2xl md:text-3xl font-serif font-black text-amber-100 tracking-wide drop-shadow-md">
             {formattedDate.toUpperCase()}
           </span>
           <span className="text-xs text-amber-200/90 font-medium italic">{venueCity}</span>
@@ -257,17 +274,17 @@ export default function ScratchCard({
 
       {/* Live status / progress hint */}
       <div className="flex items-center justify-between text-[11px] px-1 font-medium">
-        <span className="text-amber-200/90">
+        <span className="text-amber-200/90 text-left">
           {isFullyRevealed ? (
             <span className="text-amber-300 font-bold flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" /> 100% Unveiled! Date Revealed
             </span>
           ) : (
-            '👉 Scratch 60% for Heart Burst auto-reveal!'
+            '👉 Scratch with finger to reveal'
           )}
         </span>
 
-        <span className="font-mono text-amber-400 bg-black/40 px-2 py-0.5 rounded-full border border-amber-500/30 text-[10px]">
+        <span className="font-mono text-amber-400 bg-black/40 px-2 py-0.5 rounded-full border border-amber-500/30 text-[10px] shrink-0 ml-2">
           {isFullyRevealed ? '100%' : `${scratchProgress}%`}
         </span>
       </div>

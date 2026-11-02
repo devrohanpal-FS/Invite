@@ -274,6 +274,13 @@ export function saveInvitation(invite: InvitationData): void {
     const invites = getStoredInvitations();
     invites[invite.slug] = invite;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(invites));
+
+    // Background sync to server API
+    fetch('/api/invites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(invite),
+    }).catch(() => {});
   } catch (err) {
     console.error('Failed to save invitation', err);
   }

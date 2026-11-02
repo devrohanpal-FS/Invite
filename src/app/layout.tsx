@@ -1,9 +1,18 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Zareqia — Create All Events Invitation Webpage Online',
   description: 'Create ultra-luxury 3D digital wedding & event invitations with 3D Palace Gates, Scratch-to-reveal Date, Shagun UPI, and 1-click WhatsApp sharing.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
+  themeColor: '#020b06',
 };
 
 export default function RootLayout({
@@ -12,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -21,7 +30,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#fbf8f1] text-[#2b2220] min-h-screen antialiased">
+      <body className="bg-[#fbf8f1] text-[#2b2220] min-h-screen min-h-[100dvh] antialiased selection:bg-[#722f37] selection:text-[#fff8e7]">
         {children}
       </body>
     </html>

@@ -78,21 +78,21 @@ export default function RoyalGates({ groomName, brideName, onOpen }: RoyalGatesP
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
       {/* Top Header */}
-      <div className="relative z-10 pt-10 text-center px-4">
-        <div className="w-14 h-14 rounded-full border-2 border-amber-400/80 bg-amber-500/10 mx-auto flex items-center justify-center font-serif text-amber-300 text-lg shadow-[0_0_20px_rgba(212,175,55,0.4)]">
+      <div className="relative z-10 pt-8 sm:pt-10 text-center px-4 safe-area-top">
+        <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full border-2 border-amber-400/80 bg-amber-500/10 mx-auto flex items-center justify-center font-serif text-amber-300 text-base sm:text-lg shadow-[0_0_20px_rgba(212,175,55,0.4)]">
           {groomName[0]} & {brideName[0]}
         </div>
-        <p className="text-[11px] font-serif tracking-[0.25em] text-amber-300/80 uppercase mt-2">
+        <p className="text-[10px] sm:text-[11px] font-serif tracking-[0.25em] text-amber-300/80 uppercase mt-2">
           A Royal Celebration
         </p>
-        <h2 className="text-2xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 mt-0.5">
+        <h2 className="text-xl sm:text-2xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 mt-0.5">
           {groomName} & {brideName}
         </h2>
       </div>
 
       {/* 3D Gate Doors */}
       <div
-        className="relative flex-1 mx-4 my-3 flex overflow-hidden rounded-2xl border-2 border-amber-500/40 shadow-[0_0_40px_rgba(0,0,0,0.9)]"
+        className="relative flex-1 mx-4 sm:mx-auto my-3 flex overflow-hidden rounded-2xl border-2 border-amber-500/40 shadow-[0_0_40px_rgba(0,0,0,0.9)] max-w-xl w-full"
         style={{ transformStyle: 'preserve-3d' }}
       >
         {/* Left Gate Panel */}
@@ -144,10 +144,10 @@ export default function RoyalGates({ groomName, brideName, onOpen }: RoyalGatesP
       </div>
 
       {/* Bottom Button */}
-      <div className="relative z-10 pb-6 text-center px-6">
+      <div className="relative z-10 pb-6 sm:pb-8 text-center px-6 safe-area-bottom max-w-xl mx-auto w-full">
         <button
           onClick={handleUnlock}
-          className="w-full py-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 rounded-xl text-xs text-amber-300 font-bold tracking-wider uppercase font-serif transition-all cursor-pointer"
+          className="w-full min-h-[44px] py-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 rounded-xl text-xs text-amber-300 font-bold tracking-wider uppercase font-serif transition-all cursor-pointer active:scale-98"
         >
           ✨ Tap to Unlock Royal Invitation
         </button>

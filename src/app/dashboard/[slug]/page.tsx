@@ -20,15 +20,47 @@ import {
 
 export default function HostDashboardPage() {
   const params = useParams();
-  const slug = (params?.slug as string) || 'kabir-ananya';
+  const rawSlug = (params?.slug as string) || 'kabir-ananya';
+  const slug = decodeURIComponent(rawSlug).toLowerCase();
   const [invite, setInvite] = useState<InvitationData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const data = getInvitationBySlug(slug);
-    setInvite(data);
+    let isMounted = true;
+
+    async function loadData() {
+      try {
+        const res = await fetch(`/api/invites/${slug}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data && isMounted) {
+            setInvite(json.data);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch from server, checking local storage:', err);
+      }
+
+      if (isMounted) {
+        const data = getInvitationBySlug(slug);
+        setInvite(data);
+        setLoading(false);
+      }
+    }
+
+    loadData();
+
+    // Auto-refresh every 8 seconds for live RSVPs & Shagun
+    const interval = setInterval(loadData, 8000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [slug]);
 
-  if (!invite) {
+  if (loading || !invite) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-amber-300">
         Loading Host Dashboard...
@@ -78,7 +110,7 @@ export default function HostDashboardPage() {
               <ArrowLeft className="w-5 h-5" />
             </a>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <h1 className="text-xl md:text-2xl font-serif font-bold text-amber-200">
                   {invite.groomName} & {invite.brideName}&apos;s Event Intelligence
                 </h1>
@@ -92,7 +124,7 @@ export default function HostDashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <a
               href={`/create?edit=${slug}`}
               className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
@@ -207,7 +239,7 @@ export default function HostDashboardPage() {
         {/* 1-Click WhatsApp Personalized Dispatcher Feature Box */}
         <div className="p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <Sparkles className="w-4 h-4 text-emerald-400" />
               <span className="font-bold text-sm text-emerald-200">
                 1-Click WhatsApp Personalized Dispatcher (USP)
@@ -230,7 +262,7 @@ export default function HostDashboardPage() {
         {/* Live Guest RSVPs & Wishes Feed */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <MessageSquareHeart className="w-5 h-5 text-amber-400" />
               <h2 className="text-base font-bold text-amber-200 font-serif">Recent RSVPs & Guest Messages</h2>
             </div>
@@ -244,7 +276,7 @@ export default function HostDashboardPage() {
                 className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 text-xs"
               >
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     <span className="font-bold text-slate-100 text-sm">{rsvp.name}</span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${

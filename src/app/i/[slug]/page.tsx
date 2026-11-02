@@ -10,43 +10,119 @@ import VeerZaraView from '@/components/VeerZaraView';
 
 export default function GuestInvitePage() {
   const params = useParams();
-  const slug = (params?.slug as string) || 'kabir-ananya';
+  const rawSlug = (params?.slug as string) || 'kabir-ananya';
+  const slug = decodeURIComponent(rawSlug).toLowerCase();
   const [invite, setInvite] = useState<InvitationData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const data = getInvitationBySlug(slug);
-    data.totalViews = (data.totalViews || 0) + 1;
-    saveInvitation(data);
-    setInvite({ ...data });
+    let isMounted = true;
+
+    async function loadInvite() {
+      try {
+        // Attempt to fetch from server API
+        const res = await fetch(`/api/invites/${slug}?view=true`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data && isMounted) {
+            setInvite(json.data);
+            saveInvitation(json.data); // sync to localStorage cache
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch from server API, falling back to local storage:', err);
+      }
+
+      // Fallback to client-side localStorage
+      if (isMounted) {
+        const localData = getInvitationBySlug(slug);
+        localData.totalViews = (localData.totalViews || 0) + 1;
+        saveInvitation(localData);
+        setInvite(localData);
+        setLoading(false);
+      }
+    }
+
+    loadInvite();
+
+    return () => {
+      isMounted = false;
+    };
   }, [slug]);
 
-  const handleRSVP = (rsvpData: { name: string; attending: boolean; guestsCount: number; message: string }) => {
+  const handleRSVP = async (rsvpData: { name: string; attending: boolean; guestsCount: number; message: string }) => {
     if (!invite) return;
+
+    // 1. Optimistic update in UI
     const updated = addRSVPToInvite(slug, rsvpData);
     setInvite({ ...updated });
+
+    // 2. Persist to server API
+    try {
+      const res = await fetch(`/api/invites/${slug}/rsvp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rsvpData),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          setInvite(json.data);
+          saveInvitation(json.data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to post RSVP to server:', err);
+    }
   };
 
-  const handleShagun = (amount: number) => {
+  const handleShagun = async (amount: number) => {
     if (!invite) return;
+
+    // 1. Optimistic update
     const updated = {
       ...invite,
       shagunReceived: (invite.shagunReceived || 0) + amount,
     };
     saveInvitation(updated);
     setInvite({ ...updated });
+
+    // 2. Persist to server API
+    try {
+      const res = await fetch(`/api/invites/${slug}/shagun`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          setInvite(json.data);
+          saveInvitation(json.data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to post Shagun to server:', err);
+    }
   };
 
-  if (!invite) {
+  if (loading || !invite) {
     return (
-      <div className="min-h-screen bg-[#020b06] flex items-center justify-center text-amber-300 font-serif">
-        Loading Royal Invitation...
+      <div className="min-h-screen min-h-[100dvh] w-full bg-[#030705] flex flex-col items-center justify-center text-amber-300 font-serif gap-4 p-4 text-center">
+        <div className="w-12 h-12 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(212,175,55,0.4)]" />
+        <div className="space-y-1">
+          <p className="text-sm tracking-[0.2em] uppercase font-bold text-amber-200">Opening Royal Invitation</p>
+          <p className="text-xs text-amber-400/60 font-sans">Preparing ceremony details & music...</p>
+        </div>
       </div>
     );
   }
 
   // Choose component based on slug or selected theme
   const renderTemplateView = () => {
-    if (slug === 'veer-zara' || invite.theme === 'rose') {
+    if (slug === 'veer-zara' || invite.theme === 'rose' || invite.theme === 'crimson') {
       return (
         <VeerZaraView
           invite={invite}
@@ -77,11 +153,8 @@ export default function GuestInvitePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex justify-center">
-      {/* Pure Guest Invitation Viewport: Only the invitation, zero host controls */}
-      <main className="w-full max-w-[440px] min-h-screen flex flex-col bg-slate-900 shadow-2xl overflow-x-hidden relative">
-        {renderTemplateView()}
-      </main>
+    <div className="min-h-screen min-h-[100dvh] w-full flex flex-col justify-start">
+      {renderTemplateView()}
     </div>
   );
 }

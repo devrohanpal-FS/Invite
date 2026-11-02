@@ -6,6 +6,7 @@ import ScratchCard from './ScratchCard';
 import ShagunModal from './ShagunModal';
 import AudioPlayer from './AudioPlayer';
 import IntroVideoSection from './IntroVideoSection';
+import RSVPForm from './RSVPForm';
 import {
   Heart,
   MapPin,
@@ -59,11 +60,11 @@ export default function VeerZaraView({
 }: VeerZaraProps) {
   const [shagunOpen, setShagunOpen] = useState(false);
   const [activeLang, setActiveLang] = useState<'en' | 'hi' | 'gu'>('en');
+  const [showIntroVideo, setShowIntroVideo] = useState(showCurtainInitial);
+  const [introScrolledPast, setIntroScrolledPast] = useState(!showCurtainInitial);
 
-  // Intro Video scroll state
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const websiteSectionRef = useRef<HTMLDivElement | null>(null);
-  const [introScrolledPast, setIntroScrolledPast] = useState(false);
+  const introSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Real-time dynamic countdown timer calculated from invite.weddingDate
   const [timeLeft, setTimeLeft] = useState(() => getTimeRemaining(invite.weddingDate));
@@ -76,14 +77,22 @@ export default function VeerZaraView({
     return () => clearInterval(timer);
   }, [invite.weddingDate]);
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    if (scrollTop > 160) {
-      if (!introScrolledPast) setIntroScrolledPast(true);
-    } else if (scrollTop < 50) {
-      if (introScrolledPast) setIntroScrolledPast(false);
-    }
-  };
+  // Window/container scroll listener to auto-play audio when website is reached
+  useEffect(() => {
+    const handleScrollCheck = () => {
+      if (websiteSectionRef.current) {
+        const rect = websiteSectionRef.current.getBoundingClientRect();
+        if (rect.top <= (typeof window !== 'undefined' ? window.innerHeight * 0.75 : 600)) {
+          setIntroScrolledPast(true);
+        } else if (rect.top > (typeof window !== 'undefined' ? window.innerHeight * 0.9 : 800)) {
+          setIntroScrolledPast(false);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScrollCheck, { passive: true });
+    return () => window.removeEventListener('scroll', handleScrollCheck);
+  }, []);
 
   const handleScrollToWebsite = () => {
     setIntroScrolledPast(true);
@@ -93,9 +102,17 @@ export default function VeerZaraView({
   };
 
   const handleScrollToIntro = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!showIntroVideo) {
+      setShowIntroVideo(true);
     }
+    setTimeout(() => {
+      if (introSectionRef.current) {
+        introSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      } else if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      setIntroScrolledPast(false);
+    }, 50);
   };
 
   const handleShareWhatsApp = () => {
@@ -119,7 +136,7 @@ export default function VeerZaraView({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[750px] bg-gradient-to-b from-[#fdf0f2] via-[#fcf3f5] to-[#f9e9ec] text-[#422227] flex flex-col overflow-hidden font-serif selection:bg-[#943445] selection:text-white">
+    <div className="relative w-full min-h-screen bg-gradient-to-b from-[#fdf0f2] via-[#fcf3f5] to-[#f9e9ec] text-[#422227] flex flex-col font-serif selection:bg-[#943445] selection:text-white">
       
       {/* Floating White Doves & Rose Petals */}
       <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
@@ -139,14 +156,13 @@ export default function VeerZaraView({
         ))}
       </div>
 
-      {/* Main Scrollable Container (Intro Video at Top -> Scrolls Up into Website) */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto relative z-20 scroll-smooth flex flex-col"
-      >
-        {/* 1. Fullscreen Intro Video Section at the very top */}
-        <div className="relative w-full h-full min-h-[720px] shrink-0 bg-black overflow-hidden shadow-2xl">
+      {/* 1. Fullscreen Intro Video Section at the very top (If enabled or in guest view) */}
+      {showIntroVideo && (
+        <div
+          ref={introSectionRef}
+          id="intro-video-section"
+          className="relative w-full min-h-screen min-h-[100dvh] shrink-0 bg-black overflow-hidden shadow-2xl"
+        >
           <IntroVideoSection
             videoUrl={invite.introVideoUrl || '/videos/wedding-invite.mp4'}
             groomName={invite.groomName}
@@ -157,41 +173,46 @@ export default function VeerZaraView({
             isScrolledPast={introScrolledPast}
           />
         </div>
+      )}
 
-        {/* 2. Main Website Content Section */}
-        <div ref={websiteSectionRef} className="px-4 py-5 space-y-6">
-          {/* Sticky Audio & Language Bar */}
-          <div className="flex items-center justify-between gap-2 sticky top-2 z-30">
-            <div className="flex-1">
-              <AudioPlayer
-                title={invite.musicTitle || 'Afreen Afreen - Shehnai Flute'}
-                musicUrl={invite.musicUrl}
-                autoPlay={introScrolledPast}
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={handleScrollToIntro}
-              className="backdrop-blur-xl bg-white/70 hover:bg-white/90 text-[#943445] text-[10px] font-bold rounded-full px-2.5 py-1.5 border border-rose-200 focus:outline-none cursor-pointer shadow-sm flex items-center gap-1 transition-all"
-              title="Watch Intro Video Again"
-            >
-              <span>🎬</span>
-              <span>Intro</span>
-            </button>
-
-            <select
-              value={activeLang}
-              onChange={(e) => setActiveLang(e.target.value as 'en' | 'hi' | 'gu')}
-              className="backdrop-blur-xl bg-white/60 text-[#943445] text-[10px] font-bold rounded-full px-3 py-1.5 border border-rose-200 focus:outline-none cursor-pointer shadow-sm"
-            >
-              <option value="en">EN</option>
-              <option value="hi">हिन्दी</option>
-              <option value="gu">ગુજરાતી</option>
-            </select>
+      {/* 2. Main Website Content Section (Scrolls naturally without any lock or trapping) */}
+      <div
+        ref={websiteSectionRef}
+        id="wedding-website-content"
+        className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 relative z-20"
+      >
+        {/* Sticky Audio & Language Bar */}
+        <div className="flex items-center justify-between gap-2 sticky top-2 z-30">
+          <div className="flex-1">
+            <AudioPlayer
+              title={invite.musicTitle || 'Afreen Afreen - Shehnai Flute'}
+              musicUrl={invite.musicUrl}
+              autoPlay={introScrolledPast}
+            />
           </div>
 
-        {/* HERO SECTION: Sunset Terrace with Rose Garland & Doves (Exact Image Match!) */}
+          <button
+            type="button"
+            onClick={handleScrollToIntro}
+            className="backdrop-blur-xl bg-white/70 hover:bg-white/90 text-[#943445] text-[10px] font-bold rounded-full px-2.5 py-1.5 border border-rose-200 focus:outline-none cursor-pointer shadow-sm flex items-center gap-1 transition-all"
+            title="Watch Intro Video"
+          >
+            <span>🎬</span>
+            <span>Intro</span>
+          </button>
+
+          <select
+            value={activeLang}
+            onChange={(e) => setActiveLang(e.target.value as 'en' | 'hi' | 'gu')}
+            className="backdrop-blur-xl bg-white/60 text-[#943445] text-[10px] font-bold rounded-full px-3 py-1.5 border border-rose-200 focus:outline-none cursor-pointer shadow-sm"
+          >
+            <option value="en">EN</option>
+            <option value="hi">हिन्दी</option>
+            <option value="gu">ગુજરાતી</option>
+          </select>
+        </div>
+
+        {/* HERO SECTION: Sunset Terrace with Rose Garland & Doves */}
         <div className="text-center pt-2 space-y-2">
           
           <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full backdrop-blur-md bg-white/50 border border-rose-200 text-[11px] text-[#943445] shadow-sm">
@@ -207,7 +228,7 @@ export default function VeerZaraView({
             Together with our families, we invite you to celebrate our wedding
           </p>
 
-          {/* Couple Calligraphy Script Names (Matching Image) */}
+          {/* Couple Calligraphy Script Names */}
           <div className="py-2 space-y-1">
             <h2
               style={{ fontFamily: invite.fontFamily || "'Great Vibes', cursive" }}
@@ -241,7 +262,7 @@ export default function VeerZaraView({
           </p>
         </div>
 
-        {/* 1. COUPLE PORTRAIT PHOTO FRAME (Unobstructed & Elegantly Framed) */}
+        {/* 1. COUPLE PORTRAIT PHOTO FRAME */}
         <div className="relative mx-auto max-w-[310px] rounded-3xl p-3 backdrop-blur-2xl bg-white/70 border-2 border-rose-200/90 shadow-2xl shadow-rose-950/10 text-center">
           <div className="relative rounded-2xl overflow-hidden bg-gradient-to-tr from-[#943445]/10 to-[#f497a7]/20 border border-white/60 shadow-inner">
             {invite.couplePhoto ? (
@@ -249,10 +270,10 @@ export default function VeerZaraView({
                 <img
                   src={invite.couplePhoto}
                   alt={`${invite.groomName} & ${invite.brideName}`}
-                  className="w-full h-72 object-cover object-top rounded-2xl"
+                  className="w-full h-80 object-cover object-top rounded-2xl"
                 />
                 {invite.photoSubtitle && (
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent pt-6 pb-2.5 px-3 rounded-b-2xl">
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-6 pb-2.5 px-3 rounded-b-2xl">
                     <p className="text-[11px] text-rose-100 font-sans italic tracking-wide">
                       {invite.photoSubtitle}
                     </p>
@@ -260,18 +281,18 @@ export default function VeerZaraView({
                 )}
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center p-4 text-center bg-gradient-to-tr from-[#943445] to-[#f497a7]">
-                <span className="text-5xl mb-2 drop-shadow-md">🌅</span>
+              <div className="h-72 flex flex-col items-center justify-center p-4 text-center">
+                <span className="text-4xl mb-2">🕊️</span>
                 <p
                   style={{ fontFamily: invite.fontFamily || "'Great Vibes', cursive" }}
-                  className="text-white text-3xl drop-shadow"
+                  className="font-serif font-bold text-[#852839] text-xl"
                 >
                   {invite.groomName} &amp; {invite.brideName}
                 </p>
-                <p className="text-xs text-rose-100 italic font-sans mt-0.5">
-                  {invite.photoSubtitle || 'Two Souls, One Sacred Journey'}
+                <p className="text-xs text-slate-700 italic mt-1 font-sans">
+                  {invite.photoSubtitle || 'Two souls unite under the sacred blessings of God'}
                 </p>
-                <div className="mt-3 px-3 py-1 rounded-full backdrop-blur-md bg-white/85 border border-white text-[10px] text-[#852839] font-mono font-bold shadow-sm">
+                <div className="mt-3 px-3.5 py-1 rounded-full backdrop-blur-md bg-[#943445]/10 border border-[#943445]/30 text-[10px] text-[#852839] font-mono font-bold">
                   ✦ {invite.weddingDate} ✦
                 </div>
               </div>
@@ -284,7 +305,7 @@ export default function VeerZaraView({
           )}
         </div>
 
-        {/* 2. REAL-TIME WEDDING COUNTDOWN (Dynamic & Beautifully Styled) */}
+        {/* 2. REAL-TIME WEDDING COUNTDOWN */}
         <div className="p-4.5 rounded-3xl backdrop-blur-2xl bg-white/60 border border-rose-200/80 text-center space-y-3 shadow-md">
           <div className="flex items-center justify-center gap-2">
             <span className="w-6 h-px bg-rose-300"></span>
@@ -315,7 +336,7 @@ export default function VeerZaraView({
           </div>
         </div>
 
-        {/* 3. SAVE OUR DATE - HEART SCRATCH CARD (Revealing the Date) */}
+        {/* 3. SAVE OUR DATE - HEART SCRATCH CARD */}
         <div className="text-center space-y-2">
           <h3 className="font-['Great_Vibes',cursive] text-3xl text-[#943445]">
             Save Our Date
@@ -328,7 +349,7 @@ export default function VeerZaraView({
           />
         </div>
 
-        {/* PROGRAM TIMELINE (Matching Image Styling) */}
+        {/* 4. PROGRAM TIMELINE */}
         <div className="space-y-3">
           <div className="text-center space-y-1">
             <div className="w-8 h-8 rounded-full bg-rose-100 text-[#943445] flex items-center justify-center mx-auto text-sm">
@@ -361,62 +382,60 @@ export default function VeerZaraView({
           ))}
         </div>
 
-        {/* VENUE (Matching Image with Map & Solid Burgundy Button) */}
+        {/* 5. VENUE & GOOGLE MAPS */}
         <div className="p-5 rounded-3xl backdrop-blur-2xl bg-white/50 border border-rose-200 text-center space-y-3 shadow-md">
           <div className="w-10 h-10 rounded-full bg-rose-100 border border-rose-300 flex items-center justify-center text-[#943445] mx-auto">
             <MapPin className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-['Great_Vibes',cursive] text-3xl text-[#852839]">Venue</h3>
-            <h4 className="font-serif font-bold text-[#852839] text-base mt-1">{invite.venueName}</h4>
-            <p className="text-xs text-[#6e464c] mt-0.5 font-sans">{invite.venueAddress}</p>
+            <h4 className="font-serif font-bold text-[#422227] text-base mt-1">{invite.venueName}</h4>
+            <p className="text-xs text-[#6e464c] mt-0.5 leading-relaxed">{invite.venueAddress}</p>
           </div>
 
-          <div className="flex gap-2.5 pt-1 font-sans">
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
             <a
               href={invite.googleMapsUrl || `https://maps.google.com/?q=${encodeURIComponent(invite.venueName + ' ' + invite.venueAddress)}`}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 py-2.5 rounded-xl bg-[#852839] hover:bg-[#6f1f2e] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
+              className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-[#852839] hover:bg-[#6e1e2d] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
             >
               <Navigation className="w-3.5 h-3.5" />
-              <span>Google Maps</span>
+              <span>Get Venue Directions</span>
             </a>
             <button
-              onClick={() => alert(`Opening cab booking with destination set to: ${invite.venueName}!`)}
-              className="flex-1 py-2.5 rounded-xl bg-white border border-rose-300 text-[#852839] text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-rose-50 transition-all cursor-pointer shadow-sm"
+              type="button"
+              onClick={() => alert(`Opening cab app with destination set to: ${invite.venueName}!`)}
+              className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-white border border-rose-300 text-[#852839] text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-rose-50 transition-all cursor-pointer shadow-sm"
             >
               <Car className="w-3.5 h-3.5" />
-              <span>Book Cab</span>
+              <span>Book Uber / Cab</span>
             </button>
           </div>
         </div>
 
-
-        {/* GIFTS & DIGITAL SHAGUN UPI (Matching Image!) */}
+        {/* 6. DIGITAL SHAGUN VIA UPI */}
         <div className="p-5 rounded-3xl backdrop-blur-2xl bg-white/50 border border-rose-200 text-center space-y-3 shadow-md relative overflow-hidden">
           <div className="w-8 h-8 rounded-full bg-rose-100 text-[#943445] flex items-center justify-center mx-auto text-sm">
-            <Gift className="w-4 h-4 text-[#943445]" />
+            🎁
           </div>
-          <h3 className="font-['Great_Vibes',cursive] text-3xl text-[#852839]">
-            Gifts
-          </h3>
-          <p className="text-xs text-[#6e464c] font-sans leading-relaxed">
-            &ldquo;Your love, presence, and prayers are the greatest gift to us.&rdquo;
+          <h3 className="font-['Great_Vibes',cursive] text-3xl text-[#852839]">Digital Shagun</h3>
+          <p className="text-xs text-[#6e464c] leading-relaxed max-w-sm mx-auto">
+            Cannot attend in person? Send your heartfelt blessings and shagun directly to {invite.groomName} &amp; {invite.brideName} via UPI.
           </p>
 
           <button
+            type="button"
             onClick={() => setShagunOpen(true)}
-            className="w-full py-3 rounded-2xl bg-[#852839] hover:bg-[#6f1f2e] text-white font-bold text-xs shadow-md hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer font-sans"
+            className="w-full min-h-[44px] py-3 rounded-2xl bg-gradient-to-r from-[#943445] to-[#b34054] hover:from-[#802a39] hover:to-[#9e3547] text-white font-bold text-xs shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>💌</span> Send Digital Shagun via UPI Envelope
           </button>
         </div>
 
-        {/* INTERACTIVE RSVP FORM (Hidden for now as requested) */}
-        {/*
+        {/* 7. INTERACTIVE RSVP FORM */}
         <div className="space-y-2">
-          <div className="text-center space-y-0.5">
+          <div className="text-center space-y-1">
             <div className="w-8 h-8 rounded-full bg-rose-100 text-[#943445] flex items-center justify-center mx-auto text-sm">
               ✉️
             </div>
@@ -431,28 +450,30 @@ export default function VeerZaraView({
             }}
           />
         </div>
-        */}
 
-        {/* WHATSAPP SHARE CTA */}
+        {/* 8. WHATSAPP SHARE CTA */}
         <button
+          type="button"
           onClick={handleShareWhatsApp}
-          className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg font-sans"
+          className="w-full min-h-[44px] py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-98"
         >
           <Share2 className="w-4 h-4" />
-          <span>Share This Invite on WhatsApp</span>
+          <span>Share This Invitation on WhatsApp</span>
         </button>
 
-        {/* CLOSING CALLIGRAPHY (Exact Match to Image!) */}
-        <div className="pt-6 pb-10 text-center space-y-1">
-          <p className="font-['Great_Vibes',cursive] text-4xl text-[#852839] drop-shadow-sm">
-            We can&apos;t wait to celebrate with you!
+        {/* 9. FOOTER */}
+        <div className="pt-6 pb-12 text-center space-y-2">
+          <p className="font-['Great_Vibes',cursive] text-3xl text-[#852839]">
+            With Warm Blessings &amp; Love
           </p>
-          <p className="font-['Great_Vibes',cursive] text-2xl text-[#943445]">
+          <p className="text-xs text-[#852839] font-serif font-bold tracking-wider">
             {invite.groomName} &amp; {invite.brideName}
+          </p>
+          <p className="text-[10px] text-[#a36b75] font-sans">
+            Designed with Zareqia Studio
           </p>
         </div>
 
-        </div>
       </div>
 
       {/* Shagun Modal */}
